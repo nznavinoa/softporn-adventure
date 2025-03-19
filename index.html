@@ -196,14 +196,25 @@
             padding: 5px 0;
         }
         
-        .buttons {
+        .buttons, .command-buttons {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 10px;
         }
         
-        .direction-btn, .action-btn {
+        .command-buttons {
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .verb-buttons, .noun-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .direction-btn, .action-btn, .verb-btn, .noun-btn {
             background-color: transparent;
             border: 1px solid var(--neon-blue);
             color: white;
@@ -226,13 +237,30 @@
             box-shadow: 0 0 5px var(--neon-pink);
         }
         
-        .direction-btn:hover, .action-btn:hover {
+        .verb-btn {
+            background-color: rgba(5, 255, 161, 0.2);
+            border-color: var(--neon-green);
+            box-shadow: 0 0 5px var(--neon-green);
+        }
+        
+        .noun-btn {
+            background-color: rgba(185, 103, 255, 0.2);
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 5px var(--neon-purple);
+        }
+        
+        .direction-btn:hover, .action-btn:hover, .verb-btn:hover, .noun-btn:hover {
             transform: translateY(-2px);
             filter: brightness(1.2);
         }
         
-        .direction-btn:active, .action-btn:active {
+        .direction-btn:active, .action-btn:active, .verb-btn:active, .noun-btn:active {
             transform: translateY(1px);
+        }
+        
+        .selected-verb {
+            background-color: rgba(5, 255, 161, 0.5);
+            transform: translateY(-1px);
         }
         
         footer {
@@ -441,6 +469,20 @@
                     <button class="direction-btn" data-command="D">DOWN</button>
                     <button class="action-btn" data-command="LOOK">LOOK</button>
                     <button class="action-btn" data-command="INVENTORY">INV</button>
+                </div>
+                
+                <div class="command-buttons">
+                    <div class="verb-buttons">
+                        <button class="verb-btn" data-verb="TAKE">TAKE</button>
+                        <button class="verb-btn" data-verb="DROP">DROP</button>
+                        <button class="verb-btn" data-verb="USE">USE</button>
+                        <button class="verb-btn" data-verb="OPEN">OPEN</button>
+                        <button class="verb-btn" data-verb="BUY">BUY</button>
+                        <button class="verb-btn" data-verb="EXAMINE">EXAMINE</button>
+                    </div>
+                    <div id="context-buttons" class="noun-buttons">
+                        <!-- Dynamic noun buttons will appear here based on room content -->
+                    </div>
                 </div>
                 
                 <div class="command-prompt">

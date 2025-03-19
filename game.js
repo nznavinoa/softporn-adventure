@@ -2044,6 +2044,8 @@ class GameUI {
         this.game = new SoftpornAdventure();
         this.gameDisplay = document.getElementById('game-display');
         this.commandInput = document.getElementById('command-input');
+        this.contextButtons = document.getElementById('context-buttons');
+        this.selectedVerb = null;
         this.setupEventListeners();
         
         // Set up intro screen
@@ -2081,7 +2083,75 @@ class GameUI {
             
             // Set up any dynamic elements that were added
             this.setupDynamicElements();
+            
+            // Update context buttons based on the current room
+            this.updateContextButtons();
         }
+    }
+    
+    // Update context buttons based on current room items and inventory
+    updateContextButtons() {
+        // Clear existing buttons
+        this.contextButtons.innerHTML = '';
+        
+        // Get objects in the current room
+        const roomObjects = this.game.roomObjects[this.game.currentRoom] || [];
+        
+        // Add buttons for room objects
+        roomObjects.forEach(objId => {
+            // Skip adding buttons for very common or unmovable objects
+            if (objId >= 8) {  // Most interactive objects are above ID 8
+                const objName = this.game.getItemName(objId).replace(/^A |AN |THE /i, '');
+                this.addNounButton(objName, objId);
+            }
+        });
+        
+        // Add buttons for inventory items
+        this.game.inventory.forEach(objId => {
+            const objName = this.game.getItemName(objId).replace(/^A |AN |THE /i, '');
+            this.addNounButton(objName, objId);
+        });
+    }
+    
+    // Add a noun button to the context buttons
+    addNounButton(name, objId) {
+        // Limit to first word for simpler display
+        const shortName = name.split(' ')[0];
+        
+        // Create and add the button if it doesn't already exist
+        if (!document.querySelector(`.noun-btn[data-obj-id="${objId}"]`)) {
+            const button = document.createElement('button');
+            button.className = 'noun-btn';
+            button.textContent = shortName;
+            button.setAttribute('data-obj-id', objId);
+            button.setAttribute('data-name', shortName);
+            
+            // Add click event
+            button.addEventListener('click', () => {
+                if (this.selectedVerb) {
+                    // If a verb is selected, combine them
+                    const command = `${this.selectedVerb} ${shortName}`;
+                    this.game.processCommand(command);
+                    this.resetVerbSelection();
+                    this.updateGameDisplay();
+                } else {
+                    // If no verb selected, default to LOOK
+                    const command = `LOOK ${shortName}`;
+                    this.game.processCommand(command);
+                    this.updateGameDisplay();
+                }
+            });
+            
+            this.contextButtons.appendChild(button);
+        }
+    }
+    
+    // Reset verb selection
+    resetVerbSelection() {
+        document.querySelectorAll('.verb-btn').forEach(btn => {
+            btn.classList.remove('selected-verb');
+        });
+        this.selectedVerb = null;
     }
     
     // Set up event listeners for the UI
@@ -2093,6 +2163,7 @@ class GameUI {
                 if (command) {
                     this.game.processCommand(command);
                     this.commandInput.value = '';
+                    this.resetVerbSelection();
                     this.updateGameDisplay();
                 }
             }
@@ -2103,6 +2174,7 @@ class GameUI {
             button.addEventListener('click', () => {
                 const command = button.getAttribute('data-command');
                 this.game.processCommand(command);
+                this.resetVerbSelection();
                 this.updateGameDisplay();
             });
         });
@@ -2112,7 +2184,24 @@ class GameUI {
             button.addEventListener('click', () => {
                 const command = button.getAttribute('data-command');
                 this.game.processCommand(command);
+                this.resetVerbSelection();
                 this.updateGameDisplay();
+            });
+        });
+        
+        // Verb buttons
+        document.querySelectorAll('.verb-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // Toggle selection of this verb
+                if (button.classList.contains('selected-verb')) {
+                    // Deselect if already selected
+                    this.resetVerbSelection();
+                } else {
+                    // Select this verb
+                    this.resetVerbSelection();
+                    button.classList.add('selected-verb');
+                    this.selectedVerb = button.getAttribute('data-verb');
+                }
             });
         });
     }
