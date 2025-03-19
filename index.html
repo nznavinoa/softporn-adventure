@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Softporn Adventure - 80s Neon Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-pink: #ff71ce;
+            --neon-blue: #01cdfe;
+            --neon-green: #05ffa1;
+            --neon-purple: #b967ff;
+            --neon-yellow: #fffb96;
+            --dark-bg: #120458;
+            --darker-bg: #000123;
+            --grid-color: rgba(1, 205, 254, 0.15);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            background-color: var(--darker-bg);
+            color: white;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            line-height: 1.4;
+            overflow-x: hidden;
+            padding: 0;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+            perspective: 1000px;
+            transform-style: preserve-3d;
+            transform: rotateX(75deg) translateY(-100px) translateZ(-100px);
+            animation: grid-move 15s linear infinite;
+        }
+        
+        @keyframes grid-move {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 0 40px;
+            }
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            color: var(--neon-pink);
+            font-size: 2.5rem;
+            text-shadow: 
+                0 0 5px var(--neon-pink),
+                0 0 10px var(--neon-pink),
+                0 0 20px var(--neon-pink);
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            color: var(--neon-blue);
+            font-size: 1.2rem;
+            text-shadow: 
+                0 0 5px var(--neon-blue),
+                0 0 10px var(--neon-blue);
+            letter-spacing: 1px;
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: rgba(18, 4, 88, 0.7);
+            border: 2px solid var(--neon-purple);
+            box-shadow: 
+                0 0 10px var(--neon-purple),
+                inset 0 0 10px var(--neon-purple);
+            border-radius: 8px;
+            overflow: hidden;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        #game-display {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            color: white;
+            background-color: rgba(0, 1, 35, 0.6);
+            border-radius: 4px;
+            border: 1px solid var(--neon-blue);
+            box-shadow: inset 0 0 5px var(--neon-blue);
+        }
+        
+        .room-title {
+            color: var(--neon-yellow);
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px var(--neon-yellow);
+        }
+        
+        .room-description {
+            margin-bottom: 10px;
+        }
+        
+        .directions {
+            color: var(--neon-green);
+            margin-bottom: 10px;
+        }
+        
+        .items {
+            color: var(--neon-blue);
+            margin-bottom: 10px;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+        }
+        
+        .system-message {
+            color: var(--neon-pink);
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+        
+        #input-area {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .command-prompt {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            background-color: rgba(0, 1, 35, 0.8);
+            border-radius: 4px;
+            border: 1px solid var(--neon-green);
+            padding: 5px 10px;
+            box-shadow: 0 0 5px var(--neon-green);
+        }
+        
+        .prompt-label {
+            color: var(--neon-green);
+            margin-right: 10px;
+            font-weight: bold;
+            font-size: 1.3rem;
+            text-shadow: 0 0 5px var(--neon-green);
+        }
+        
+        #command-input {
+            flex: 1;
+            background-color: transparent;
+            border: none;
+            outline: none;
+            color: white;
+            font-family: 'VT323', monospace;
+            font-size: 1.3rem;
+            padding: 5px 0;
+        }
+        
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .direction-btn, .action-btn {
+            background-color: transparent;
+            border: 1px solid var(--neon-blue);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: 'VT323', monospace;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .direction-btn {
+            background-color: rgba(1, 205, 254, 0.2);
+            box-shadow: 0 0 5px var(--neon-blue);
+        }
+        
+        .action-btn {
+            background-color: rgba(255, 113, 206, 0.2);
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 5px var(--neon-pink);
+        }
+        
+        .direction-btn:hover, .action-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+        
+        .direction-btn:active, .action-btn:active {
+            transform: translateY(1px);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--neon-blue);
+            font-size: 0.9rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, 
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.03) 50%, 
+                rgba(255, 255, 255, 0) 100%);
+            background-size: 100% 8px;
+            z-index: 10;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+        
+        /* Intro screen */
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--darker-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .intro-title {
+            font-family: 'Press Start 2P', cursive;
+            color: var(--neon-pink);
+            font-size: 2.5rem;
+            text-shadow: 
+                0 0 5px var(--neon-pink),
+                0 0 10px var(--neon-pink),
+                0 0 20px var(--neon-pink);
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                text-shadow: 
+                    0 0 5px var(--neon-pink),
+                    0 0 10px var(--neon-pink),
+                    0 0 20px var(--neon-pink);
+            }
+            50% {
+                text-shadow: 
+                    0 0 10px var(--neon-pink),
+                    0 0 20px var(--neon-pink),
+                    0 0 30px var(--neon-pink),
+                    0 0 40px var(--neon-pink);
+            }
+            100% {
+                text-shadow: 
+                    0 0 5px var(--neon-pink),
+                    0 0 10px var(--neon-pink),
+                    0 0 20px var(--neon-pink);
+            }
+        }
+        
+        .intro-desc {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            max-width: 700px;
+            text-shadow: 0 0 5px var(--neon-blue);
+        }
+        
+        .warning {
+            color: var(--neon-yellow);
+            font-size: 1.2rem;
+            margin: 20px 0;
+            max-width: 700px;
+            text-shadow: 0 0 5px var(--neon-yellow);
+        }
+        
+        #start-game {
+            background-color: transparent;
+            border: 2px solid var(--neon-green);
+            color: var(--neon-green);
+            padding: 10px 30px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 20px;
+            transition: all 0.3s;
+            text-shadow: 0 0 5px var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+        
+        #start-game:hover {
+            background-color: rgba(5, 255, 161, 0.2);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--neon-green);
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .intro-title {
+                font-size: 1.8rem;
+            }
+            
+            .intro-desc, .warning {
+                font-size: 1.1rem;
+            }
+            
+            #start-game {
+                font-size: 1rem;
+                padding: 8px 20px;
+            }
+            
+            .buttons {
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            main {
+                padding: 10px;
+            }
+            
+            #game-display {
+                font-size: 1.1rem;
+                padding: 8px;
+            }
+            
+            .prompt-label {
+                font-size: 1.1rem;
+            }
+            
+            #command-input {
+                font-size: 1.1rem;
+            }
+            
+            .direction-btn, .action-btn {
+                font-size: 0.9rem;
+                padding: 4px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    <div class="scanline"></div>
+    
+    <div id="intro-screen">
+        <h1 class="intro-title">SOFTPORN ADVENTURE</h1>
+        <p class="intro-desc">The classic 1981 adult text adventure game reborn with a neon 80s aesthetic</p>
+        <p class="warning">WARNING: This game contains adult themes and suggestive content intended for mature audiences.</p>
+        <button id="start-game">START GAME</button>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1>SOFTPORN ADVENTURE</h1>
+            <p class="subtitle">80s NEON EDITION</p>
+        </header>
+        
+        <main>
+            <div id="game-display"></div>
+            
+            <div id="input-area">
+                <div class="buttons">
+                    <button class="direction-btn" data-command="N">NORTH</button>
+                    <button class="direction-btn" data-command="S">SOUTH</button>
+                    <button class="direction-btn" data-command="E">EAST</button>
+                    <button class="direction-btn" data-command="W">WEST</button>
+                    <button class="direction-btn" data-command="U">UP</button>
+                    <button class="direction-btn" data-command="D">DOWN</button>
+                    <button class="action-btn" data-command="LOOK">LOOK</button>
+                    <button class="action-btn" data-command="INVENTORY">INV</button>
+                </div>
+                
+                <div class="command-prompt">
+                    <span class="prompt-label">></span>
+                    <input type="text" id="command-input" placeholder="What shall I do?" autocomplete="off">
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            Original game by Chuck Benton (1981) &copy; Blue Sky Software | Neon 80s Web Version (2025)
+        </footer>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>
