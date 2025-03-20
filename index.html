@@ -101,6 +101,13 @@
             letter-spacing: 1px;
         }
         
+        .game-container {
+            display: flex;
+            gap: 20px;
+            height: 100%;
+            margin-bottom: 20px;
+        }
+        
         main {
             flex: 1;
             display: flex;
@@ -113,7 +120,66 @@
             border-radius: 8px;
             overflow: hidden;
             padding: 20px;
-            margin-bottom: 20px;
+        }
+        
+        #location-frame {
+            width: 300px;
+            background-color: rgba(18, 4, 88, 0.7);
+            border: 2px solid var(--neon-blue);
+            box-shadow: 
+                0 0 10px var(--neon-blue),
+                inset 0 0 10px var(--neon-blue);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .location-image-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .location-image {
+            flex: 1;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background-color: rgba(0, 1, 35, 0.6);
+            border-bottom: 1px solid var(--neon-blue);
+            min-height: 300px;
+        }
+        
+        .location-name {
+            padding: 10px;
+            text-align: center;
+            font-size: 1.4rem;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 5px var(--neon-yellow);
+            background-color: rgba(0, 1, 35, 0.8);
+        }
+        
+        /* Placeholder for locations without images */
+        .location-image::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(45deg, var(--grid-color) 25%, transparent 25%),
+                linear-gradient(-45deg, var(--grid-color) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, var(--grid-color) 75%),
+                linear-gradient(-45deg, transparent 75%, var(--grid-color) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            opacity: 0.3;
         }
         
         #game-display {
@@ -456,41 +522,54 @@
             <p class="subtitle">80s NEON EDITION</p>
         </header>
         
-        <main>
-            <div id="game-display"></div>
+        <div class="game-container">
+            <main>
+                <div id="game-display"></div>
+                
+                <div id="input-area">
+                    <div class="buttons">
+                        <button class="direction-btn" data-command="N">NORTH</button>
+                        <button class="direction-btn" data-command="S">SOUTH</button>
+                        <button class="direction-btn" data-command="E">EAST</button>
+                        <button class="direction-btn" data-command="W">WEST</button>
+                        <button class="direction-btn" data-command="U">UP</button>
+                        <button class="direction-btn" data-command="D">DOWN</button>
+                        <button class="action-btn" data-command="LOOK">LOOK</button>
+                        <button class="action-btn" data-command="INVENTORY">INV</button>
+                    </div>
+                    
+                    <div class="command-buttons">
+                        <div class="verb-buttons">
+                            <button class="verb-btn" data-verb="TAKE">TAKE</button>
+                            <button class="verb-btn" data-verb="DROP">DROP</button>
+                            <button class="verb-btn" data-verb="USE">USE</button>
+                            <button class="verb-btn" data-verb="OPEN">OPEN</button>
+                            <button class="verb-btn" data-verb="BUY">BUY</button>
+                            <button class="verb-btn" data-verb="EXAMINE">EXAMINE</button>
+                        </div>
+                        <div id="context-buttons" class="noun-buttons">
+                            <!-- Dynamic noun buttons will appear here based on room content -->
+                        </div>
+                    </div>
+                    
+                    <div class="command-prompt">
+                        <span class="prompt-label">></span>
+                        <input type="text" id="command-input" placeholder="What shall I do?" autocomplete="off">
+                    </div>
+                </div>
+            </main>
             
-            <div id="input-area">
-                <div class="buttons">
-                    <button class="direction-btn" data-command="N">NORTH</button>
-                    <button class="direction-btn" data-command="S">SOUTH</button>
-                    <button class="direction-btn" data-command="E">EAST</button>
-                    <button class="direction-btn" data-command="W">WEST</button>
-                    <button class="direction-btn" data-command="U">UP</button>
-                    <button class="direction-btn" data-command="D">DOWN</button>
-                    <button class="action-btn" data-command="LOOK">LOOK</button>
-                    <button class="action-btn" data-command="INVENTORY">INV</button>
-                </div>
-                
-                <div class="command-buttons">
-                    <div class="verb-buttons">
-                        <button class="verb-btn" data-verb="TAKE">TAKE</button>
-                        <button class="verb-btn" data-verb="DROP">DROP</button>
-                        <button class="verb-btn" data-verb="USE">USE</button>
-                        <button class="verb-btn" data-verb="OPEN">OPEN</button>
-                        <button class="verb-btn" data-verb="BUY">BUY</button>
-                        <button class="verb-btn" data-verb="EXAMINE">EXAMINE</button>
+            <aside id="location-frame">
+                <div class="location-image-container">
+                    <div class="location-image" id="location-image">
+                        <!-- Location image will be displayed here -->
                     </div>
-                    <div id="context-buttons" class="noun-buttons">
-                        <!-- Dynamic noun buttons will appear here based on room content -->
+                    <div class="location-name" id="location-name">
+                        <!-- Location name will be displayed here -->
                     </div>
                 </div>
-                
-                <div class="command-prompt">
-                    <span class="prompt-label">></span>
-                    <input type="text" id="command-input" placeholder="What shall I do?" autocomplete="off">
-                </div>
-            </div>
-        </main>
+            </aside>
+        </div>
         
         <footer>
             Original game by Chuck Benton (1981) &copy; Blue Sky Software | Neon 80s Web Version (2025)

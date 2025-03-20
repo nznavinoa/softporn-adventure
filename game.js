@@ -242,7 +242,7 @@ class SoftpornAdventure {
         return this.objectNames[itemId] || `UNKNOWN ITEM (${itemId})`;
     }
     
-    // Display the current room
+    // Update the room display with image
     displayRoom() {
         let output = "";
         const room = this.rooms[this.currentRoom];
@@ -267,7 +267,17 @@ class SoftpornAdventure {
         }
         
         this.addToGameDisplay(output);
+        
+        // Also update the location image (for UI display)
+        this.updateLocationImage();
+        
         return output;
+    }
+    
+    // Update the location image in the UI
+    updateLocationImage() {
+        // This method doesn't actually do the UI update, but is used by the UI handler
+        // to know when to update the location image
     }
     
     // Process a user command
@@ -2045,6 +2055,8 @@ class GameUI {
         this.gameDisplay = document.getElementById('game-display');
         this.commandInput = document.getElementById('command-input');
         this.contextButtons = document.getElementById('context-buttons');
+        this.locationImage = document.getElementById('location-image');
+        this.locationName = document.getElementById('location-name');
         this.selectedVerb = null;
         this.setupEventListeners();
         
@@ -2086,6 +2098,48 @@ class GameUI {
             
             // Update context buttons based on the current room
             this.updateContextButtons();
+            
+            // Update location image
+            this.updateLocationFrame();
+        }
+    }
+    
+    // Update the location image frame
+    updateLocationFrame() {
+        const roomId = this.game.currentRoom;
+        const roomName = this.game.rooms[roomId].name;
+        
+        // Update the location name
+        this.locationName.textContent = roomName;
+        
+        // Set a class to the image div based on the location
+        this.locationImage.className = 'location-image';
+        this.locationImage.classList.add(`location-${roomId}`);
+        
+        // Try to set the image if available
+        const imagePath = `images/locations/${roomId}.jpg`;
+        
+        // Check if image exists (we could use fetch but for simplicity let's just add styling)
+        this.locationImage.style.backgroundImage = `url('${imagePath}')`;
+        
+        // If your images follow a different naming convention, adjust the above
+        
+        // You could also add specific styling for each location
+        switch(roomId) {
+            case 3: // BAR
+                this.locationImage.style.backgroundColor = 'rgba(100, 0, 100, 0.3)';
+                break;
+            case 9: // HOOKER'S BEDROOM
+                this.locationImage.style.backgroundColor = 'rgba(150, 0, 50, 0.3)';
+                break;
+            case 21: // DISCO
+                this.locationImage.style.backgroundColor = 'rgba(0, 100, 150, 0.3)';
+                break;
+            case 26: // JACUZZI
+                this.locationImage.style.backgroundColor = 'rgba(0, 150, 200, 0.3)';
+                break;
+            default:
+                this.locationImage.style.backgroundColor = 'rgba(0, 1, 35, 0.6)';
         }
     }
     
