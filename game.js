@@ -48,6 +48,78 @@ class SoftpornAdventure {
         
         // Game output history
         this.gameOutput = [];
+        
+        // Map of verb to applicable object types
+        this.verbToObjectTypes = {
+            "TAKE": ["ITEM"],
+            "DROP": ["INVENTORY"],
+            "USE": ["INVENTORY", "USABLE"],
+            "OPEN": ["OPENABLE"],
+            "EXAMINE": ["ALL"],
+            "LOOK": ["ALL"],
+            "BUY": ["BUYABLE"],
+            "TALK": ["CHARACTER"],
+            "PUSH": ["PUSHABLE"],
+            "WEAR": ["WEARABLE"]
+        };
+        
+        // Map of object IDs to their types
+        this.objectTypes = {
+            // Characters
+            13: ["CHARACTER"], // Businessman
+            15: ["CHARACTER"], // Bartender
+            16: ["CHARACTER"], // Pimp
+            17: ["CHARACTER"], // Hooker
+            19: ["CHARACTER"], // Preacher
+            25: ["CHARACTER"], // Blonde
+            27: ["CHARACTER"], // Bum
+            32: ["CHARACTER"], // Waitress
+            41: ["CHARACTER"], // Dealer
+            49: ["CHARACTER"], // Girl
+            
+            // Openable objects
+            8: ["OPENABLE"], // Desk
+            30: ["OPENABLE"], // Door
+            35: ["OPENABLE"], // Closet
+            
+            // Usable objects
+            69: ["INVENTORY", "WEARABLE"], // Rubber
+            81: ["INVENTORY", "USABLE"], // Rope
+            77: ["ITEM", "CLIMBABLE"], // Stool
+            
+            // Items that can be taken
+            50: ["ITEM"], // Newspaper
+            51: ["ITEM"], // Wedding ring
+            52: ["ITEM", "BUYABLE"], // Whiskey
+            53: ["ITEM", "BUYABLE"], // Beer
+            55: ["ITEM"], // Hammer
+            58: ["ITEM"], // Apple Core
+            59: ["ITEM"], // Seeds
+            60: ["ITEM"], // Candy
+            61: ["ITEM"], // Pills
+            64: ["ITEM"], // Passcard
+            65: ["ITEM"], // Radio
+            66: ["ITEM"], // Pocket Knife
+            68: ["ITEM", "BUYABLE"], // Magazine
+            72: ["ITEM", "BUYABLE"], // Wine
+            74: ["ITEM"], // Doll
+            75: ["ITEM"], // Apple
+            76: ["ITEM"], // Pitcher
+            84: ["ITEM"], // Remote control
+            
+            // Pushable objects
+            14: ["PUSHABLE"], // Button
+            46: ["PUSHABLE"] // Window
+        };
+        
+        // Special locations with specific verbs
+        this.locationSpecificVerbs = {
+            3: ["BUY"], // Bar
+            13: ["PLAY"], // Casino
+            14: ["PLAY"], // 21 Room
+            21: ["DANCE"], // Disco
+            24: ["BUY"] // Pharmacy
+        };
     }
     
     initializeRooms() {
@@ -237,9 +309,123 @@ class SoftpornAdventure {
         };
     }
     
+    // Get available directions for the current room
+    getAvailableDirections() {
+        const exitInfo = this.roomExits[this.currentRoom];
+        if (exitInfo && exitInfo[1]) {
+            return exitInfo[1];
+        }
+        return [];
+    }
+    
+    // Get objects in the current room
+    getObjectsInRoom() {
+        return this.roomObjects[this.currentRoom] || [];
+    }
+    
+    // Determine which verbs are applicable in the current context
+    getApplicableVerbs() {
+        const result = ["LOOK", "EXAMINE"];
+        
+        // Always allow basic inventory management if player has items
+        if (this.inventory.length > 0) {
+            result.push("DROP");
+        }
+        
+        // Check if there are takeable items in the room
+        const roomObjects = this.getObjectsInRoom();
+        let hasItems = false;
+        
+        for (const objId of roomObjects) {
+            const types = this.objectTypes[objId] || [];
+            
+            if (types.includes("ITEM")) {
+                hasItems = true;
+                result.push("TAKE");
+            }
+            
+            if (types.includes("OPENABLE")) {
+                result.push("OPEN");
+            }
+            
+            if (types.includes("CHARACTER")) {
+                result.push("TALK");
+            }
+            
+            if (types.includes("PUSHABLE")) {
+                result.push("PUSH");
+            }
+        }
+        
+        // Add location-specific verbs
+        if (this.locationSpecificVerbs[this.currentRoom]) {
+            result.push(...this.locationSpecificVerbs[this.currentRoom]);
+        }
+        
+        // Add special case verbs based on room conditions
+        if (this.currentRoom === 5 && this.tvOn === 0) {
+            result.push("TV");
+        }
+        
+        if (this.currentRoom === 8) {
+            result.push("JUMP");
+        }
+        
+        // Check for special objects in inventory
+        for (const itemId of this.inventory) {
+            const types = this.objectTypes[itemId] || [];
+            
+            if (types.includes("USABLE") || types.includes("WEARABLE")) {
+                if (!result.includes("USE")) {
+                    result.push("USE");
+                }
+            }
+        }
+        
+        // Only show unique verbs
+        return [...new Set(result)];
+    }
+    
     // Get the name of an item from its ID
     getItemName(itemId) {
         return this.objectNames[itemId] || `UNKNOWN ITEM (${itemId})`;
+    }
+    
+    // Get noun buttons for the current context
+    getContextNouns() {
+        const result = [];
+        
+        // Add room objects
+        const roomObjects = this.getObjectsInRoom();
+        for (const objId of roomObjects) {
+            const name = this.getItemName(objId);
+            // Extract the key noun by removing articles
+            let displayName = name.replace(/^(A |AN |THE )/i, '');
+            // Limit to first word for simpler display
+            displayName = displayName.split(' ')[0];
+            
+            result.push({
+                id: objId,
+                name: displayName
+            });
+        }
+        
+        // Add inventory items
+        for (const itemId of this.inventory) {
+            const name = this.getItemName(itemId);
+            // Extract the key noun by removing articles
+            let displayName = name.replace(/^(A |AN |THE )/i, '');
+            // Limit to first word for simpler display
+            displayName = displayName.split(' ')[0];
+            
+            result.push({
+                id: itemId,
+                name: displayName,
+                inInventory: true
+            });
+        }
+        
+        return result;
     }
     
     // Update the room display with image
@@ -250,7 +436,7 @@ class SoftpornAdventure {
         output += `<div class="room-title">${room.desc}</div>`;
         
         // Show available directions
-        const directions = this.roomExits[this.currentRoom][1];
+        const directions = this.getAvailableDirections();
         if (directions && directions.length > 0) {
             output += `<div class="directions">OTHER AREAS ARE: ${directions.join(", ")}</div>`;
         } else {
@@ -258,7 +444,7 @@ class SoftpornAdventure {
         }
         
         // Show objects in the room
-        const objects = this.roomObjects[this.currentRoom] || [];
+        const objects = this.getObjectsInRoom();
         if (objects.length > 0) {
             const objectNames = objects.map(objId => this.getItemName(objId));
             output += `<div class="items">ITEMS IN SIGHT ARE: ${objectNames.join(", ")}</div>`;
@@ -268,16 +454,16 @@ class SoftpornAdventure {
         
         this.addToGameDisplay(output);
         
-        // Also update the location image (for UI display)
-        this.updateLocationImage();
+        // Update the UI to show available options
+        this.updateUI();
         
         return output;
     }
     
-    // Update the location image in the UI
-    updateLocationImage() {
-        // This method doesn't actually do the UI update, but is used by the UI handler
-        // to know when to update the location image
+    // Update the UI elements based on current context
+    updateUI() {
+        // This will be called by the UI handler
+        // It should use getAvailableDirections(), getApplicableVerbs(), and getContextNouns()
     }
     
     // Process a user command
@@ -443,8 +629,71 @@ class SoftpornAdventure {
             return;
         }
         
+        // Handle talking to characters
+        if (verb === "TALK") {
+            this.talkTo(noun);
+            return;
+        }
+        
         // If we get here, we don't recognize the command
         this.addToGameDisplay(`<div class="message">I DON'T KNOW HOW TO ${verb} SOMETHING!</div>`);
+    }
+    
+    // Talk to a character (simplified for this implementation)
+    talkTo(noun) {
+        // Convert noun to object ID
+        const objectId = this.getObjectId(noun);
+        
+        if (!objectId) {
+            this.addToGameDisplay(`<div class="message">WHO SHOULD I TALK TO?</div>`);
+            return;
+        }
+        
+        // Check if the object is in the room
+        if (!this.isObjectInRoom(objectId)) {
+            this.addToGameDisplay(`<div class="message">THEY'RE NOT HERE!</div>`);
+            return;
+        }
+        
+        // Check if it's a character
+        const types = this.objectTypes[objectId] || [];
+        if (!types.includes("CHARACTER")) {
+            this.addToGameDisplay(`<div class="message">I CAN'T TALK TO THAT!</div>`);
+            return;
+        }
+        
+        // Handle specific characters
+        switch(objectId) {
+            case 15: // Bartender
+                this.addToGameDisplay(`<div class="message">THE BARTENDER SAYS 'WHAT'LL IT BE?'</div>`);
+                break;
+            case 16: // Pimp
+                this.addToGameDisplay(`<div class="message">THE PIMP GLARES AT ME AND SAYS 'GIMME $1000 IF YOU WANT MY GIRL!'</div>`);
+                break;
+            case 17: // Hooker
+                this.addToGameDisplay(`<div class="message">THE HOOKER WINKS AT ME AND SAYS 'READY FOR SOME FUN, HONEY?'</div>`);
+                break;
+            case 19: // Preacher
+                this.addToGameDisplay(`<div class="message">THE PREACHER SAYS 'LOOKING TO GET HITCHED?'</div>`);
+                break;
+            case 25: // Blonde
+                this.addToGameDisplay(`<div class="message">THE BLONDE GIVES ME A SEDUCTIVE SMILE.</div>`);
+                break;
+            case 27: // Bum
+                this.addToGameDisplay(`<div class="message">THE BUM MUMBLES SOMETHING ABOUT WINE.</div>`);
+                break;
+            case 32: // Waitress
+                this.addToGameDisplay(`<div class="message">THE WAITRESS ASKS 'WHAT CAN I GET YOU?'</div>`);
+                break;
+            case 41: // Dealer
+                this.addToGameDisplay(`<div class="message">THE DEALER SAYS 'PLACE YOUR BETS!'</div>`);
+                break;
+            case 49: // Girl
+                this.addToGameDisplay(`<div class="message">THE GIRL SMILES SHYLY.</div>`);
+                break;
+            default:
+                this.addToGameDisplay(`<div class="message">THEY DON'T SEEM INTERESTED IN CONVERSATION.</div>`);
+        }
     }
     
     // Move to a new room
@@ -460,7 +709,7 @@ class SoftpornAdventure {
         }
         
         // Get available directions for the current room
-        const availableDirs = this.roomExits[this.currentRoom][1];
+        const availableDirs = this.getAvailableDirections();
         
         // Check if the direction is valid
         if (!availableDirs.includes(direction)) {
@@ -773,6 +1022,9 @@ class SoftpornAdventure {
             default:
                 this.addToGameDisplay(`<div class="message">I SEE NOTHING SPECIAL</div>`);
         }
+        
+        // Update UI after examining objects (may reveal new items)
+        this.updateUI();
     }
     
     // Add an item to the current room
@@ -989,6 +1241,9 @@ class SoftpornAdventure {
         
         this.addToGameDisplay(`<div class="message">OK</div>`);
         
+        // Update the UI to reflect inventory change
+        this.updateUI();
+        
         // Update the display
         this.displayRoom();
     }
@@ -1097,6 +1352,9 @@ class SoftpornAdventure {
             this.addToRoom(84); // Add TV remote
         }
         
+        // Update the UI to reflect inventory change
+        this.updateUI();
+        
         // Update the display
         this.displayRoom();
     }
@@ -1185,6 +1443,9 @@ class SoftpornAdventure {
             default:
                 this.addToGameDisplay(`<div class="message">UMMM..........................HUH??</div>`);
         }
+        
+        // Update UI after opening things (may reveal new items)
+        this.updateUI();
     }
     
     // TV power on/off
@@ -1230,6 +1491,9 @@ class SoftpornAdventure {
             
             // Event will be handled by the UI
         }
+        
+        // Update UI
+        this.updateUI();
     }
     
     // Choose a TV channel
@@ -1290,671 +1554,39 @@ class SoftpornAdventure {
         this.addToGameDisplay(`<div class="system-message">WOULD YOU LIKE TO PLAY? <button id="yes-slots">Y</button> <button id="no-slots">N</button></div>`);
     }
     
-    // Play blackjack
-    playBlackjack() {
-        if (this.currentRoom !== 14) {
-            this.addToGameDisplay(`<div class="message">NOT YET, BUT MAYBE LATER................</div>`);
-            return;
-        }
-        
-        this.addToGameDisplay(`<div class="message">YOU HAVE $${this.money}00</div>`);
-        
-        // Ask for bet amount with an input field
-        this.addToGameDisplay(`<div class="system-message">
-            HOW MANY DOLLARS WOULD YOU LIKE TO BET? 
-            <input type="number" id="bet-amount" min="100" max="${this.money * 100}" step="100" value="100">
-            <button id="place-bet">BET</button>
+    // Add content to the game display
+    addToGameDisplay(content, className = "") {
+        this.gameOutput.push({ content, className });
+        // The actual display updating is handled by the UI
+    }
+    
+    // Start the game
+    start() {
+        // Display intro text
+        this.addToGameDisplay(`<div class="message">
+            SOFTPORN ADVENTURE
+            WRITTEN BY CHUCK BENTON
+            COPYRIGHT 1981
+            BLUE SKY SOFTWARE
+            
+            80s NEON WEB EDITION
         </div>`);
+        
+        // Ask if a saved game should be loaded (for authenticity, though not implemented)
+        this.addToGameDisplay(`<div class="system-message">SHOULD A SAVED GAME BE LOADED? <button id="no-load">N</button></div>`);
     }
     
-    // Start blackjack game
-    startBlackjack(betAmount) {
-        betAmount = parseInt(betAmount);
+    // Initialize game after intro
+    initializeGame() {
+        this.addToGameDisplay(`<div class="message">
+            PLEASE WAIT
+            INITIALIZATION PHASE
+        </div>`);
         
-        if (betAmount > this.money * 100) {
-            this.addToGameDisplay(`<div class="message">YOU DON'T HAVE THAT MUCH!!!</div>`);
-            return;
-        }
-        
-        if (betAmount % 100 !== 0) {
-            this.addToGameDisplay(`<div class="message">$100 INCREMENTS ONLY!!</div>`);
-            return;
-        }
-        
-        const bet = betAmount / 100;
-        this.addToGameDisplay(`<div class="message">OK</div>`);
-        
-        // Initialize game state for blackjack
-        this.blackjackState = {
-            playerTotal: 0,
-            dealerTotal: 0,
-            playerAces: 0,
-            dealerAces: 0,
-            bet: bet,
-            phase: 'dealing'
-        };
-        
-        // Deal initial cards
-        for (let i = 1; i <= 4; i++) {
-            const { cardValue, cardName, isAce } = this.dealCard();
-            
-            if (i === 1 || i === 3) { // Player's cards
-                this.addToGameDisplay(`<div class="message">YOU'RE DEALT A${cardName}</div>`);
-                this.blackjackState.playerTotal += cardValue;
-                if (isAce) {
-                    this.blackjackState.playerAces += 1;
-                }
-            } else { // Dealer's cards
-                if (i === 2) {
-                    this.addToGameDisplay(`<div class="message">THE DEALER GETS A CARD DOWN</div>`);
-                } else {
-                    this.addToGameDisplay(`<div class="message">THE DEALER GETS A${cardName}</div>`);
-                }
-                this.blackjackState.dealerTotal += cardValue;
-                if (isAce) {
-                    this.blackjackState.dealerAces += 1;
-                }
-            }
-        }
-        
-        // Adjust for aces if needed
-        while (this.blackjackState.playerTotal > 21 && this.blackjackState.playerAces > 0) {
-            this.blackjackState.playerAces -= 1;
-            this.blackjackState.playerTotal -= 10;
-        }
-        
-        // Show player's total
-        this.addToGameDisplay(`<div class="message">YOUR TOTAL IS ${this.blackjackState.playerTotal}</div>`);
-        
-        // Check for blackjack
-        if (this.blackjackState.playerTotal === 21 && this.blackjackState.playerAces === 1) {
-            this.addToGameDisplay(`<div class="message">YOU'VE GOT ***BLACKJACK***</div>`);
-            this.money += this.blackjackState.bet * 5;
-            this.addToGameDisplay(`<div class="message">YOU HAVE $${this.money}00</div>`);
-            
-            this.addToGameDisplay(`<div class="system-message">PLAY AGAIN?? <button id="yes-blackjack">Y</button> <button id="no-blackjack">N</button></div>`);
-            return;
-        }
-        
-        if (this.blackjackState.dealerTotal === 21 && this.blackjackState.dealerAces === 1) {
-            this.addToGameDisplay(`<div class="message">THE DEALER HAS ***BLACKJACK***</div>`);
-            this.money -= this.blackjackState.bet;
-            this.addToGameDisplay(`<div class="message">YOU HAVE $${this.money}00</div>`);
-            
-            if (this.money === 0) {
-                this.addToGameDisplay(`<div class="message">YOU'RE OUT OF MONEY!!</div>`);
-                this.addToGameDisplay(`<div class="message">SO LONG!!!!!!!!!!</div>`);
-                this.gameOver();
-                return;
-            }
-            
-            this.addToGameDisplay(`<div class="system-message">PLAY AGAIN?? <button id="yes-blackjack">Y</button> <button id="no-blackjack">N</button></div>`);
-            return;
-        }
-        
-        // Player's turn
-        this.blackjackState.phase = 'player';
-        this.addToGameDisplay(`<div class="system-message">WOULD YOU LIKE A HIT? <button id="yes-hit">Y</button> <button id="no-hit">N</button></div>`);
-    }
-    
-    // Player hits in blackjack
-    blackjackHit() {
-        if (this.blackjackState.phase !== 'player') return;
-        
-        const { cardValue, cardName, isAce } = this.dealCard();
-        this.addToGameDisplay(`<div class="message">YOU GET A${cardName}</div>`);
-        this.blackjackState.playerTotal += cardValue;
-        if (isAce) {
-            this.blackjackState.playerAces += 1;
-        }
-        
-        // Adjust for aces if needed
-        while (this.blackjackState.playerTotal > 21 && this.blackjackState.playerAces > 0) {
-            this.blackjackState.playerAces -= 1;
-            this.blackjackState.playerTotal -= 10;
-        }
-        
-        this.addToGameDisplay(`<div class="message">YOUR TOTAL IS ${this.blackjackState.playerTotal}</div>`);
-        
-        if (this.blackjackState.playerTotal > 21) {
-            this.addToGameDisplay(`<div class="message">BUSTED!</div>`);
-            this.money -= this.blackjackState.bet;
-            this.addToGameDisplay(`<div class="message">YOU HAVE $${this.money}00</div>`);
-            
-            if (this.money === 0) {
-                this.addToGameDisplay(`<div class="message">YOU'RE OUT OF MONEY!!</div>`);
-                this.addToGameDisplay(`<div class="message">SO LONG!!!!!!!!!!</div>`);
-                this.gameOver();
-                return;
-            }
-            
-            this.addToGameDisplay(`<div class="system-message">PLAY AGAIN?? <button id="yes-blackjack">Y</button> <button id="no-blackjack">N</button></div>`);
-            return;
-        }
-        
-        this.addToGameDisplay(`<div class="system-message">WOULD YOU LIKE A HIT? <button id="yes-hit">Y</button> <button id="no-hit">N</button></div>`);
-    }
-    
-    // Player stands in blackjack
-    blackjackStand() {
-        if (this.blackjackState.phase !== 'player') return;
-        
-        this.blackjackState.phase = 'dealer';
-        
-        // Dealer's turn
-        while (this.blackjackState.dealerTotal < 17) {
-            const { cardValue, cardName, isAce } = this.dealCard();
-            this.addToGameDisplay(`<div class="message">THE DEALER GETS A${cardName}</div>`);
-            this.blackjackState.dealerTotal += cardValue;
-            if (isAce) {
-                this.blackjackState.dealerAces += 1;
-            }
-            
-            // Adjust for aces if needed
-            while (this.blackjackState.dealerTotal > 21 && this.blackjackState.dealerAces > 0) {
-                this.blackjackState.dealerAces -= 1;
-                this.blackjackState.dealerTotal -= 10;
-            }
-        }
-        
-        this.addToGameDisplay(`<div class="message">THE DEALER HAS ${this.blackjackState.dealerTotal}</div>`);
-        
-        // Determine winner
-        if (this.blackjackState.dealerTotal > 21) {
-            this.addToGameDisplay(`<div class="message">YOU WIN!!</div>`);
-            this.money += this.blackjackState.bet;
-        } else if (this.blackjackState.playerTotal < this.blackjackState.dealerTotal) {
-            this.addToGameDisplay(`<div class="message">YOU LOSE!</div>`);
-            this.money -= this.blackjackState.bet;
-        } else if (this.blackjackState.playerTotal === this.blackjackState.dealerTotal) {
-            this.addToGameDisplay(`<div class="message">TIE!</div>`);
-        } else {
-            this.addToGameDisplay(`<div class="message">YOU WIN!!</div>`);
-            this.money += this.blackjackState.bet;
-        }
-        
-        this.addToGameDisplay(`<div class="message">YOU HAVE $${this.money}00</div>`);
-        
-        if (this.money === 0) {
-            this.addToGameDisplay(`<div class="message">YOU'RE OUT OF MONEY!!</div>`);
-            this.addToGameDisplay(`<div class="message">SO LONG!!!!!!!!!!</div>`);
-            this.gameOver();
-            return;
-        }
-        
-        this.addToGameDisplay(`<div class="system-message">PLAY AGAIN?? <button id="yes-blackjack">Y</button> <button id="no-blackjack">N</button></div>`);
-    }
-    
-    // Deal a card for blackjack
-    dealCard() {
-        const cardValue = Math.floor(Math.random() * 13) + 1;
-        let cardName = "";
-        let actualValue = cardValue;
-        let isAce = false;
-        
-        if (cardValue === 1) {
-            cardName = "N ACE";
-            actualValue = 11;
-            isAce = true;
-        } else if (cardValue === 11) {
-            cardName = " JACK";
-            actualValue = 10;
-        } else if (cardValue === 12) {
-            cardName = " QUEEN";
-            actualValue = 10;
-        } else if (cardValue === 13) {
-            cardName = " KING";
-            actualValue = 10;
-        } else if (cardValue === 10) {
-            cardName = " 10";
-        } else {
-            cardName = " " + cardValue;
-        }
-        
-        return { cardValue: actualValue, cardName, isAce };
-    }
-    
-    // Push an object
-    pushObject(noun) {
-        if (!noun) {
-            this.addToGameDisplay(`<div class="message">PUSH WHAT?</div>`);
-            return;
-        }
-        
-        // Convert noun to object ID
-        const objectId = this.getObjectId(noun);
-        
-        if (!objectId) {
-            this.addToGameDisplay(`<div class="message">I DON'T SEE THAT HERE!!</div>`);
-            return;
-        }
-        
-        // Handle specific objects
-        if (objectId === 14 && this.currentRoom === 3) { // Button in bar
-            this.addToGameDisplay(`<div class="system-message">A VOICE ASKS 'WHATS THE PASSWORD?' (ONE WORD) <input type="text" id="password-input"><button id="submit-password">SUBMIT</button></div>`);
-            return;
-        } else if (objectId === 14 && this.currentRoom === 19) { // Button in hotel
-            if (this.blondeGirlDrugged === 0) {
-                this.addToGameDisplay(`<div class="message">THE BLONDE SAYS 'YOU CAN'T GO THERE!'</div>`);
-                return;
-            }
-            
-            this.addToGameDisplay(`<div class="message">${this.specialTexts[7]}</div>`);
-            this.currentRoom = 25;
+        setTimeout(() => {
+            // Display the starting room
             this.displayRoom();
-            return;
-        } else if (objectId === 14 && this.currentRoom === 25) { // Button in penthouse
-            this.addToGameDisplay(`<div class="message">${this.specialTexts[7]}</div>`);
-            this.currentRoom = 19;
-            this.displayRoom();
-            return;
-        } else if (objectId === 44 && this.currentRoom === 15 && this.bushesFound === 1) {
-            this.currentRoom = 28;
-            this.displayRoom();
-            return;
-        } else if (objectId === 46 && this.currentRoom === 8) {
-            this.moveTo("SOUTH");
-            return;
-        } else if (objectId === 49) { // Girl
-            this.addToGameDisplay(`<div class="message">SHE KICKS ME IN THE STOMACH AND LAUGHS!!</div>`);
-            return;
-        }
-        
-        this.addToGameDisplay(`<div class="message">PUSHY CHUMP, EH???</div>`);
-    }
-    
-    // Handle password submission
-    submitPassword(password) {
-        password = password.toUpperCase();
-        
-        if (password.startsWith("BELL")) {
-            this.addToGameDisplay(`<div class="message">THE CURTAIN PULLS BACK!!</div>`);
-            this.roomExits[3][0] = 4; // Change exit type to allow east
-        } else {
-            this.addToGameDisplay(`<div class="message">WRONG!</div>`);
-        }
-    }
-    
-    // Seduce an object/character
-    seduceObject(noun) {
-        if (noun.toUpperCase() === "YOU") {
-            this.addToGameDisplay(`<div class="message">NOT TONIGHT- I HAVE A HEADACHE!</div>`);
-            return;
-        }
-        
-        // Convert noun to object ID
-        const objectId = this.getObjectId(noun);
-        
-        if (!objectId) {
-            this.addToGameDisplay(`<div class="message">I DON'T SEE THAT HERE!!</div>`);
-            return;
-        }
-        
-        // Handle specific objects
-        if (objectId === 17 && this.currentRoom === 9) { // Hooker
-            if (this.hookerDone) {
-                this.addToGameDisplay(`<div class="message">SHE CAN'T TAKE IT ANY MORE!!!!!</div>`);
-                return;
-            }
-            
-            if (!this.wearingRubber) {
-                this.addToGameDisplay(`<div class="message">OH NO!!!! I'VE GOT THE DREADED ATOMIC CLAP!!! I'M DEAD!!</div>`);
-                this.gameOver();
-                return;
-            }
-            
-            this.addToGameDisplay(`<div class="message">${this.specialTexts[8]}</div>`);
-            this.score = 1;
-            this.hookerDone = true;
-            return;
-        } else if (objectId === 74) { // Inflatable doll
-            if (this.idInflated === 0) {
-                this.addToGameDisplay(`<div class="message">INFLATE IT FIRST- STUPID!!!</div>`);
-                return;
-            }
-            
-            if (this.idInflated === 1) {
-                this.addToGameDisplay(`<div class="message">OH BOY!!!!!- IT'S GOT 3 SPOTS TO TRY!!!\nI THRUST INTO THE DOLL- KINKY....EH???\nI START TO INCREASE MY TEMPO...FASTER AND FASTER I GO!!!!\nSUDDENLY THERE'S A FLATULENT NOISE AND THE DOLL BECOMES A POPPED BALLOON SOARING AROUND THE ROOM! IT FLIES OUT OF THE ROOM AND DISAPPEARS!</div>`);
-                this.idInflated = 2;
-                
-                // Remove doll from inventory if it's there
-                if (this.isObjectInInventory(74)) {
-                    this.removeFromInventory(74);
-                }
-                // Or remove from room if it's there
-                else if (this.isObjectInRoom(74)) {
-                    this.removeFromRoom(this.currentRoom, 74);
-                }
-                
-                return;
-            }
-        } else if (objectId === 49) { // Girl
-            if (this.currentRoom === 26) { // Girl in jacuzzi
-                if (!this.jacuzziApple) {
-                    this.addToGameDisplay(`<div class="message">NOT YET, BUT MAYBE LATER................</div>`);
-                    return;
-                }
-                
-                this.addToGameDisplay(`<div class="message">SHE HOPS OUT OF THE TUB- THE STEAM RISING FROM HER SKIN.......HER BODY IS\nTHE BEST LOOKING I'VE EVER SEEN!!!\nTHEN SHE COMES UP TO ME AND GIVES THE BEST TIME OF MY LIFE!!!\nWELL......I GUESS THAT'S IT! AS YOUR PUPPET IN THIS GAME I THANK YOU FOR THE PLEASURE YOU HAVE BROUGHT ME.... SO LONG......I'VE GOT TO GET BACK TO MY NEW GIRL HERE! KEEP IT UP!</div>`);
-                this.score = 3;
-                this.addToGameDisplay(`<div class="message">YOUR SCORE IS ${this.score} OUT OF '3'</div>`);
-                this.addToGameDisplay(`<div class="system-message">GAME COMPLETE! YOU WON WITH THE MAXIMUM SCORE!</div>`);
-                return;
-            } else if (this.girlPoints >= 5 && this.currentRoom === 16) { // Girl in honeymoon suite
-                if (this.girlPoints !== 6) {
-                    this.addToGameDisplay(`<div class="message">SHE SAYS 'GET ME WINE!!! I'M NERVOUS!!'</div>`);
-                    return;
-                }
-                
-                this.addToGameDisplay(`<div class="message">SHE SAYS 'LAY DOWN HONEY- LET ME GIVE YOU A SPECIAL SUPRISE!!\nI LAY DOWN AND SHE SAYS 'OK- NOW CLOSE YOUR EYES'. I CLOSE MY EYES AND SHE SHE STARTS TO GO TO WORK ON ME.........\nI'M REALLY ENJOYING MYSELF WHEN SUDDENLY SHE TIES ME TO THE BED!!!! THEN SHE SAYS 'SO LONG- TURKEY!' AND RUNS OUT OF THE ROOM!!!</div>`);
-                this.addToGameDisplay(`<div class="message">WELL- THE SCORE IS NOW '2' OUT OF A POSSIBLE '3'.........BUT I'M ALSO TIED TO THE BED AND CAN'T MOVE.</div>`);
-                this.score = 2;
-                this.tiedToBed = true;
-                
-                // Add rope to the room for the player to potentially cut later
-                this.addToRoom(81);
-                return;
-            }
-        } else if (objectId === 32) { // Waitress
-            this.addToGameDisplay(`<div class="message">SHE KICKS ME IN THE GROIN AND SAYS 'WISE UP- BUSTER!!'</div>`);
-            return;
-        } else if (objectId === 25) { // Blonde
-            this.addToGameDisplay(`<div class="message">SHE SAYS 'I'M WORKING! LEAVE ME ALONE!'</div>`);
-            return;
-        } else if (objectId === 16) { // Pimp
-            this.addToGameDisplay(`<div class="message">HE SAYS 'YOU'LL NEVER HAVE ENOUGH MONEY FOR ME- FOOL!!!' I GUESS HE'S GAY!</div>`);
-            return;
-        } else if (objectId === 27) { // Bum
-            this.addToGameDisplay(`<div class="message">TO DO THAT I NEED VASELINE!!</div>`);
-            return;
-        } else if (objectId === 15) { // Bartender
-            this.addToGameDisplay(`<div class="message">HE JUMPS OVER THE BAR AND KILLS ME!!</div>`);
-            this.gameOver();
-            return;
-        } else if (objectId === 13) { // Businessman
-            this.addToGameDisplay(`<div class="message">NO WAY!!! YOU'RE WIERD!!</div>`);
-            return;
-        }
-        
-        this.addToGameDisplay(`<div class="message">PERVERT!</div>`);
-    }
-    
-    // Climb an object
-    climbObject(noun) {
-        if (!noun) {
-            this.addToGameDisplay(`<div class="message">CLIMB WHAT?</div>`);
-            return;
-        }
-        
-        // Convert noun to object ID
-        const objectId = this.getObjectId(noun);
-        
-        if (!objectId) {
-            this.addToGameDisplay(`<div class="message">I DON'T SEE THAT HERE!!</div>`);
-            return;
-        }
-        
-        // Handle specific objects
-        if (objectId === 77) { // Stool
-            if (!this.isObjectInRoom(77)) {
-                this.addToGameDisplay(`<div class="message">IT'S NOT ON THE FLOOR HERE!</div>`);
-                return;
-            }
-            
-            this.addToGameDisplay(`<div class="message">OK</div>`);
-            this.stoolUsed = 1;
-            return;
-        }
-        
-        this.addToGameDisplay(`<div class="message">IT'S NOT ON THE FLOOR HERE!</div>`);
-    }
-    
-    // Get room with object
-    getRoomWithObject(objectId) {
-        for (const [roomId, objects] of Object.entries(this.roomObjects)) {
-            if (objects.includes(objectId)) {
-                return parseInt(roomId);
-            }
-        }
-        return null;
-    }
-    
-    // Water control (on/off)
-    waterControl(state) {
-        if (this.currentRoom !== 27) {
-            this.addToGameDisplay(`<div class="message">FIND A WORKING SINK</div>`);
-            return;
-        }
-        
-        if (state === "ON") {
-            this.addToGameDisplay(`<div class="message">OK</div>`);
-            this.waterOn = 1;
-        } else if (state === "OFF") {
-            this.addToGameDisplay(`<div class="message">OK</div>`);
-            this.waterOn = 0;
-        }
-    }
-    
-    // Fill an object
-    fillObject(noun) {
-        if (!noun) {
-            this.addToGameDisplay(`<div class="message">FILL WHAT?</div>`);
-            return;
-        }
-        
-        // Check for pitcher in inventory
-        if (!this.isObjectInInventory(76)) {
-            this.addToGameDisplay(`<div class="message">GET ME THE PITCHER SO I DON'T SPILL IT!</div>`);
-            return;
-        }
-        
-        // Check if at sink with water running
-        if (this.currentRoom !== 27 || this.waterOn !== 1) {
-            this.addToGameDisplay(`<div class="message">NO WATER!!!</div>`);
-            return;
-        }
-        
-        this.addToGameDisplay(`<div class="message">OK</div>`);
-        this.pitcherFull = 1;
-    }
-    
-    // Use/wear an object
-    useObject(noun) {
-        if (!noun) {
-            this.addToGameDisplay(`<div class="message">USE WHAT?</div>`);
-            return;
-        }
-        
-        // Convert noun to object ID
-        const objectId = this.getObjectId(noun);
-        
-        if (!objectId) {
-            this.addToGameDisplay(`<div class="message">I DON'T SEE THAT HERE!!</div>`);
-            return;
-        }
-        
-        // Check if the object is in inventory
-        if (!this.isObjectInInventory(objectId)) {
-            this.addToGameDisplay(`<div class="message">I DON'T HAVE IT!!</div>`);
-            return;
-        }
-        
-        // Handle specific objects
-        if (objectId === 69) { // Rubber
-            this.wearingRubber = 1;
-            this.addToGameDisplay(`<div class="message">IT TICKLES!!!!</div>`);
-            return;
-        } else if (objectId === 12) { // Toilet
-            this.addToGameDisplay(`<div class="message">...........I GOT THOSE CONSTIPATION BLUES..............................</div>`);
-            this.addToGameDisplay(`<div class="message">AHHH...RELIEF! THANKS!</div>`);
-            return;
-        } else if (objectId === 26) { // Bed
-            this.addToGameDisplay(`<div class="message">AHHHHH........SLEEP!!!</div>`);
-            this.addToGameDisplay(`<div class="message">YOUR DISK IS SNORING!!! I CAN'T SLEEP!</div>`);
-            return;
-        } else if (objectId === 81) { // Rope
-            if (this.currentRoom !== 7 && this.currentRoom !== 10) {
-                this.addToGameDisplay(`<div class="message">NOT YET, BUT MAYBE LATER................</div>`);
-                return;
-            }
-            
-            this.usingRope = 1;
-            this.addToGameDisplay(`<div class="message">OK</div>`);
-            return;
-        } else if (objectId === 64) { // Passcard
-            if (this.currentRoom === 23) {
-                this.openObject("DOOR");
-                return;
-            } else {
-                this.addToGameDisplay(`<div class="message">I DON'T SEE A PLACE TO USE IT HERE.</div>`);
-                return;
-            }
-        } else if (objectId === 66) { // Knife
-            if (this.currentRoom === 16 && this.tiedToBed) {
-                this.addToGameDisplay(`<div class="message">I DO AND IT WORKED! THANKS!</div>`);
-                this.tiedToBed = false;
-                return;
-            }
-            this.addToGameDisplay(`<div class="message">TRY GIVING IT TO HER</div>`);
-            return;
-        } else if (objectId === 54) { // Bag
-            this.addToGameDisplay(`<div class="message">TRY GIVING IT TO HER</div>`);
-            return;
-        }
-        
-        this.addToGameDisplay(`<div class="message">I DON'T KNOW HOW TO USE THAT.</div>`);
-    }
-    
-    // Buy an object
-    buyObject(noun) {
-        if (!noun) {
-            this.addToGameDisplay(`<div class="message">BUY WHAT?</div>`);
-            return;
-        }
-        
-        // Check if we have enough money
-        if (this.money < 1) {
-            this.addToGameDisplay(`<div class="message">NO MONEY!!!</div>`);
-            return;
-        }
-        
-        // Convert noun to object ID
-        const objectId = this.getObjectId(noun);
-        
-        if (!objectId) {
-            this.addToGameDisplay(`<div class="message">I DON'T SEE THAT HERE!!</div>`);
-            return;
-        }
-        
-        // Handle specific objects
-        if ((objectId === 52 || objectId === 53) && this.currentRoom === 3) { // Buying drinks at bar
-            if ((objectId === 52 && this.whiskeybought) || (objectId === 53 && this.beerBought)) {
-                this.addToGameDisplay(`<div class="message">SORRY...TEMPORARILY SOLD OUT</div>`);
-                return;
-            }
-            
-            this.addToGameDisplay(`<div class="message">I GIVE THE BARTENDER $100 AND HE PLACES IT ON THE BAR.</div>`);
-            this.money -= 1;
-            
-            if (objectId === 52) {
-                this.whiskeybought = true;
-            } else {
-                this.beerBought = true;
-            }
-            
-            // Add the item to the room
-            this.addToRoom(objectId);
-            return;
-        } else if (objectId === 72 && this.currentRoom === 21) { // Buying wine at disco
-            if (this.wineBottle) {
-                this.addToGameDisplay(`<div class="message">SORRY....ALL OUT!</div>`);
-                return;
-            }
-            
-            this.addToGameDisplay(`<div class="message">THE WAITRESS TAKES $100 AND SAYS SHE'LL RETURN</div>`);
-            setTimeout(() => {
-                this.addToGameDisplay(`<div class="message">POOR SERVICE!</div>`);
-            }, 2000);
-            
-            this.money -= 1;
-            this.wineBottle = true;
-            
-            // Add wine to the room
-            this.addToRoom(72);
-            return;
-        } else if (objectId === 69 && this.currentRoom === 24) { // Buying rubber at pharmacy
-            if (this.rubberColor) {
-                this.addToGameDisplay(`<div class="message">ALL OUT!!</div>`);
-                return;
-            }
-            
-            this.addToGameDisplay(`<div class="message">THE MAN LEANS OVER THE COUNTER AND WHISPERS:</div>`);
-            
-            // Add form for rubber properties
-            this.addToGameDisplay(`<div class="system-message">
-                <div>WHAT COLOR? <input type="text" id="rubber-color" placeholder="RED"></div>
-                <div>AND FOR A FLAVOR?? <input type="text" id="rubber-flavor" placeholder="CHERRY"></div>
-                <div>LUBRICATED OR NOT? <button id="rubber-lub-yes">Y</button> <button id="rubber-lub-no">N</button></div>
-                <div>RIBBED? <button id="rubber-rib-yes">Y</button> <button id="rubber-rib-no">N</button></div>
-                <button id="buy-rubber">PURCHASE</button>
-            </div>`);
-            
-            return;
-        } else if (objectId === 68) { // Magazine
-            if (!this.isObjectInRoom(objectId)) {
-                this.addToGameDisplay(`<div class="message">NOT YET, BUT MAYBE LATER................</div>`);
-                return;
-            }
-            
-            this.addToGameDisplay(`<div class="message">HE TAKES $100 AND GIVES ME THE MAGAZINE</div>`);
-            this.money -= 1;
-            
-            // Remove magazine from room
-            this.removeFromRoom(this.currentRoom, 68);
-            
-            // Add magazine to inventory
-            this.inventory.push(68);
-            return;
-        }
-        
-        this.addToGameDisplay(`<div class="message">NOT YET, BUT MAYBE LATER................</div>`);
-    }
-    
-    // Complete rubber purchase
-    buyRubber(color, flavor, lubricated, ribbed) {
-        this.rubberColor = color.toUpperCase();
-        this.rubberFlavor = flavor.toUpperCase();
-        this.rubberLubricated = lubricated;
-        this.rubberRibbed = ribbed;
-        
-        this.addToGameDisplay(`<div class="message">HE YELLS- THIS PERVERT JUST BOUGHT A ${this.rubberColor}, ${this.rubberFlavor}-FLAVORED</div>`);
-        this.addToGameDisplay(`<div class="message">${this.rubberLubricated ? 'LUBRICATED' : 'NON-LUBRICATED'}, ${this.rubberRibbed ? 'RIBBED' : 'SMOOTH'} RUBBER!!!!!</div>`);
-        this.addToGameDisplay(`<div class="message">A LADY WALKS BY AND LOOKS AT ME IN DISGUST!!!!</div>`);
-        
-        this.money -= 1;
-        
-        // Add rubber to inventory
-        this.inventory.push(69);
-    }
-    
-    // Jump
-    jump() {
-        if (this.currentRoom !== 8) {
-            this.addToGameDisplay(`<div class="message">WHOOOPEEEEE!!!</div>`);
-            return;
-        }
-        
-        this.addToGameDisplay(`<div class="message">AAAAAEEEEEIIIIIIII!!!!!!!!!</div>`);
-        this.addToGameDisplay(`<div class="message">SPLAAATTTTT!!!!!</div>`);
-        
-        if (this.currentRoom === 10 && this.usingRope === 0) {
-            this.addToGameDisplay(`<div class="message">I SHOULD HAVE USED SAFETY ROPE!!!!!!!!</div>`);
-            this.gameOver();
-            return;
-        }
-        
-        // You die if you jump off the ledge
-        this.gameOver();
+        }, 1000);
     }
     
     // Game over
@@ -2011,41 +1643,6 @@ class SoftpornAdventure {
             <button id="door-3">3</button>
         </div>`);
     }
-    
-    // Add content to the game display
-    addToGameDisplay(content, className = "") {
-        this.gameOutput.push({ content, className });
-        // The actual display updating is handled by the UI
-    }
-    
-    // Start the game
-    start() {
-        // Display intro text
-        this.addToGameDisplay(`<div class="message">
-            SOFTPORN ADVENTURE
-            WRITTEN BY CHUCK BENTON
-            COPYRIGHT 1981
-            BLUE SKY SOFTWARE
-            
-            80s NEON WEB EDITION
-        </div>`);
-        
-        // Ask if a saved game should be loaded (for authenticity, though not implemented)
-        this.addToGameDisplay(`<div class="system-message">SHOULD A SAVED GAME BE LOADED? <button id="no-load">N</button></div>`);
-    }
-    
-    // Initialize game after intro
-    initializeGame() {
-        this.addToGameDisplay(`<div class="message">
-            PLEASE WAIT
-            INITIALIZATION PHASE
-        </div>`);
-        
-        setTimeout(() => {
-            // Display the starting room
-            this.displayRoom();
-        }, 1000);
-    }
 }
 
 // UI Handler for the Softporn Adventure game
@@ -2065,6 +1662,14 @@ class GameUI {
             document.getElementById('intro-screen').style.display = 'none';
             this.startGame();
         });
+        
+        // Extend the game's updateUI method to use our UI methods
+        this.game.updateUI = () => {
+            this.updateDirectionButtons();
+            this.updateVerbButtons();
+            this.updateContextButtons();
+            this.updateLocationName();
+        };
     }
     
     // Start the game
@@ -2096,107 +1701,122 @@ class GameUI {
             // Set up any dynamic elements that were added
             this.setupDynamicElements();
             
-            // Update context buttons based on the current room
-            this.updateContextButtons();
+            // Update UI elements based on current game state
+            this.game.updateUI();
+        }
+    }
+    
+    // Update direction buttons based on available exits
+    updateDirectionButtons() {
+        const availableDirections = this.game.getAvailableDirections();
+        
+        // Make all direction buttons invisible initially
+        document.querySelectorAll('.direction-btn').forEach(button => {
+            button.style.display = 'none';
+        });
+        
+        // Show only buttons for available directions
+        availableDirections.forEach(direction => {
+            let dirCode;
+            switch(direction) {
+                case "NORTH": dirCode = "N"; break;
+                case "SOUTH": dirCode = "S"; break;
+                case "EAST": dirCode = "E"; break;
+                case "WEST": dirCode = "W"; break;
+                case "UP": dirCode = "U"; break;
+                case "DOWN": dirCode = "D"; break;
+                default: dirCode = direction; break;
+            }
             
-            // Update location image
-            this.updateLocationFrame();
-        }
+            const button = document.querySelector(`.direction-btn[data-command="${dirCode}"]`);
+            if (button) {
+                button.style.display = 'inline-block';
+            }
+        });
     }
     
-    // Update the location image frame
-    updateLocationFrame() {
-        const roomId = this.game.currentRoom;
-        const roomName = this.game.rooms[roomId].name;
+    // Update verb buttons based on current context
+    updateVerbButtons() {
+        const applicableVerbs = this.game.getApplicableVerbs();
         
-        // Update the location name
-        this.locationName.textContent = roomName;
+        // Get the verb buttons container
+        const verbButtons = document.querySelector('.verb-buttons');
+        if (!verbButtons) return;
         
-        // Set a class to the image div based on the location
-        this.locationImage.className = 'location-image';
-        this.locationImage.classList.add(`location-${roomId}`);
+        // Clear existing buttons
+        verbButtons.innerHTML = '';
         
-        // Try to set the image if available
-        const imagePath = `images/locations/${roomId}.jpg`;
-        
-        // Check if image exists (we could use fetch but for simplicity let's just add styling)
-        this.locationImage.style.backgroundImage = `url('${imagePath}')`;
-        
-        // If your images follow a different naming convention, adjust the above
-        
-        // You could also add specific styling for each location
-        switch(roomId) {
-            case 3: // BAR
-                this.locationImage.style.backgroundColor = 'rgba(100, 0, 100, 0.3)';
-                break;
-            case 9: // HOOKER'S BEDROOM
-                this.locationImage.style.backgroundColor = 'rgba(150, 0, 50, 0.3)';
-                break;
-            case 21: // DISCO
-                this.locationImage.style.backgroundColor = 'rgba(0, 100, 150, 0.3)';
-                break;
-            case 26: // JACUZZI
-                this.locationImage.style.backgroundColor = 'rgba(0, 150, 200, 0.3)';
-                break;
-            default:
-                this.locationImage.style.backgroundColor = 'rgba(0, 1, 35, 0.6)';
-        }
+        // Add buttons for applicable verbs
+        applicableVerbs.forEach(verb => {
+            const button = document.createElement('button');
+            button.className = 'verb-btn';
+            button.textContent = verb;
+            button.setAttribute('data-verb', verb);
+            
+            // Add click event
+            button.addEventListener('click', () => {
+                // Toggle selection of this verb
+                if (button.classList.contains('selected-verb')) {
+                    // Deselect if already selected
+                    this.resetVerbSelection();
+                } else {
+                    // Select this verb
+                    this.resetVerbSelection();
+                    button.classList.add('selected-verb');
+                    this.selectedVerb = button.getAttribute('data-verb');
+                }
+            });
+            
+            verbButtons.appendChild(button);
+        });
     }
     
-    // Update context buttons based on current room items and inventory
+    // Update context buttons (nouns) based on room objects and inventory
     updateContextButtons() {
         // Clear existing buttons
         this.contextButtons.innerHTML = '';
         
-        // Get objects in the current room
-        const roomObjects = this.game.roomObjects[this.game.currentRoom] || [];
+        // Get context nouns
+        const contextNouns = this.game.getContextNouns();
         
-        // Add buttons for room objects
-        roomObjects.forEach(objId => {
-            // Skip adding buttons for very common or unmovable objects
-            if (objId >= 8) {  // Most interactive objects are above ID 8
-                const objName = this.game.getItemName(objId).replace(/^A |AN |THE /i, '');
-                this.addNounButton(objName, objId);
-            }
-        });
-        
-        // Add buttons for inventory items
-        this.game.inventory.forEach(objId => {
-            const objName = this.game.getItemName(objId).replace(/^A |AN |THE /i, '');
-            this.addNounButton(objName, objId);
-        });
-    }
-    
-    // Add a noun button to the context buttons
-    addNounButton(name, objId) {
-        // Limit to first word for simpler display
-        const shortName = name.split(' ')[0];
-        
-        // Create and add the button if it doesn't already exist
-        if (!document.querySelector(`.noun-btn[data-obj-id="${objId}"]`)) {
+        // Add buttons for each noun
+        contextNouns.forEach(noun => {
             const button = document.createElement('button');
             button.className = 'noun-btn';
-            button.textContent = shortName;
-            button.setAttribute('data-obj-id', objId);
-            button.setAttribute('data-name', shortName);
+            button.textContent = noun.name;
+            button.setAttribute('data-obj-id', noun.id);
+            button.setAttribute('data-name', noun.name);
+            
+            // Add special class for inventory items
+            if (noun.inInventory) {
+                button.classList.add('inventory-item-btn');
+            }
             
             // Add click event
             button.addEventListener('click', () => {
                 if (this.selectedVerb) {
                     // If a verb is selected, combine them
-                    const command = `${this.selectedVerb} ${shortName}`;
+                    const command = `${this.selectedVerb} ${noun.name}`;
                     this.game.processCommand(command);
                     this.resetVerbSelection();
                     this.updateGameDisplay();
                 } else {
                     // If no verb selected, default to LOOK
-                    const command = `LOOK ${shortName}`;
+                    const command = `LOOK ${noun.name}`;
                     this.game.processCommand(command);
                     this.updateGameDisplay();
                 }
             });
             
             this.contextButtons.appendChild(button);
+        });
+    }
+    
+    // Update location name display
+    updateLocationName() {
+        if (this.locationName) {
+            const room = this.game.rooms[this.game.currentRoom];
+            this.locationName.textContent = room ? room.name : "";
         }
     }
     
@@ -2242,22 +1862,6 @@ class GameUI {
                 this.updateGameDisplay();
             });
         });
-        
-        // Verb buttons
-        document.querySelectorAll('.verb-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                // Toggle selection of this verb
-                if (button.classList.contains('selected-verb')) {
-                    // Deselect if already selected
-                    this.resetVerbSelection();
-                } else {
-                    // Select this verb
-                    this.resetVerbSelection();
-                    button.classList.add('selected-verb');
-                    this.selectedVerb = button.getAttribute('data-verb');
-                }
-            });
-        });
     }
     
     // Set up dynamic elements that were added to the display
@@ -2280,17 +1884,7 @@ class GameUI {
             });
         });
         
-        // Password submission
-        const submitPasswordBtn = document.getElementById('submit-password');
-        if (submitPasswordBtn) {
-            submitPasswordBtn.addEventListener('click', () => {
-                const password = document.getElementById('password-input').value;
-                this.game.submitPassword(password);
-                this.updateGameDisplay();
-            });
-        }
-        
-        // TV channel selection
+        // Channel selection
         const channelSelect = document.getElementById('channel-select');
         if (channelSelect) {
             channelSelect.addEventListener('change', () => {
@@ -2301,7 +1895,7 @@ class GameUI {
             });
         }
         
-        // Change TV channel
+        // Channel change buttons
         const yesChannelBtn = document.getElementById('yes-channel');
         if (yesChannelBtn) {
             yesChannelBtn.addEventListener('click', () => {
@@ -2313,12 +1907,12 @@ class GameUI {
         const noChannelBtn = document.getElementById('no-channel');
         if (noChannelBtn) {
             noChannelBtn.addEventListener('click', () => {
-                // Do nothing, just close the dialog
+                // Just close the dialog
                 this.updateGameDisplay();
             });
         }
         
-        // Slot machine play
+        // Slot machine buttons
         const yesSlots = document.getElementById('yes-slots');
         if (yesSlots) {
             yesSlots.addEventListener('click', () => {
@@ -2331,81 +1925,6 @@ class GameUI {
         if (noSlots) {
             noSlots.addEventListener('click', () => {
                 // Just close the prompt
-                this.updateGameDisplay();
-            });
-        }
-        
-        // Blackjack
-        const placeBetBtn = document.getElementById('place-bet');
-        if (placeBetBtn) {
-            placeBetBtn.addEventListener('click', () => {
-                const betAmount = document.getElementById('bet-amount').value;
-                this.game.startBlackjack(betAmount);
-                this.updateGameDisplay();
-            });
-        }
-        
-        // Blackjack hit button
-        const yesHitBtn = document.getElementById('yes-hit');
-        if (yesHitBtn) {
-            yesHitBtn.addEventListener('click', () => {
-                this.game.blackjackHit();
-                this.updateGameDisplay();
-            });
-        }
-        
-        // Blackjack stand button
-        const noHitBtn = document.getElementById('no-hit');
-        if (noHitBtn) {
-            noHitBtn.addEventListener('click', () => {
-                this.game.blackjackStand();
-                this.updateGameDisplay();
-            });
-        }
-        
-        // Blackjack play again button
-        const yesBlackjackBtn = document.getElementById('yes-blackjack');
-        if (yesBlackjackBtn) {
-            yesBlackjackBtn.addEventListener('click', () => {
-                this.game.playBlackjack();
-                this.updateGameDisplay();
-            });
-        }
-        
-        const noBlackjackBtn = document.getElementById('no-blackjack');
-        if (noBlackjackBtn) {
-            noBlackjackBtn.addEventListener('click', () => {
-                // Just close the prompt
-                this.updateGameDisplay();
-            });
-        }
-        
-        // Rubber purchase form
-        const buyRubberBtn = document.getElementById('buy-rubber');
-        if (buyRubberBtn) {
-            buyRubberBtn.addEventListener('click', () => {
-                const color = document.getElementById('rubber-color').value || 'RED';
-                const flavor = document.getElementById('rubber-flavor').value || 'CHERRY';
-                
-                // Get lubrication status from buttons
-                let lubricated = true;
-                document.getElementById('rubber-lub-yes').addEventListener('click', () => {
-                    lubricated = true;
-                });
-                document.getElementById('rubber-lub-no').addEventListener('click', () => {
-                    lubricated = false;
-                });
-                
-                // Get ribbed status from buttons
-                let ribbed = true;
-                document.getElementById('rubber-rib-yes').addEventListener('click', () => {
-                    ribbed = true;
-                });
-                document.getElementById('rubber-rib-no').addEventListener('click', () => {
-                    ribbed = false;
-                });
-                
-                this.game.buyRubber(color, flavor, lubricated, ribbed);
                 this.updateGameDisplay();
             });
         }

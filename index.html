@@ -315,6 +315,12 @@
             box-shadow: 0 0 5px var(--neon-purple);
         }
         
+        .inventory-item-btn {
+            border-color: var(--neon-yellow);
+            box-shadow: 0 0 5px var(--neon-yellow);
+            background-color: rgba(255, 251, 150, 0.2);
+        }
+        
         .direction-btn:hover, .action-btn:hover, .verb-btn:hover, .noun-btn:hover {
             transform: translateY(-2px);
             filter: brightness(1.2);
@@ -528,6 +534,7 @@
                 
                 <div id="input-area">
                     <div class="buttons">
+                        <!-- Direction buttons - only visible ones will be shown by the JavaScript -->
                         <button class="direction-btn" data-command="N">NORTH</button>
                         <button class="direction-btn" data-command="S">SOUTH</button>
                         <button class="direction-btn" data-command="E">EAST</button>
@@ -539,16 +546,13 @@
                     </div>
                     
                     <div class="command-buttons">
+                        <!-- Verb buttons - will be populated dynamically -->
                         <div class="verb-buttons">
-                            <button class="verb-btn" data-verb="TAKE">TAKE</button>
-                            <button class="verb-btn" data-verb="DROP">DROP</button>
-                            <button class="verb-btn" data-verb="USE">USE</button>
-                            <button class="verb-btn" data-verb="OPEN">OPEN</button>
-                            <button class="verb-btn" data-verb="BUY">BUY</button>
-                            <button class="verb-btn" data-verb="EXAMINE">EXAMINE</button>
+                            <!-- Verbs will be added dynamically based on context -->
                         </div>
+                        <!-- Noun buttons - will be populated dynamically -->
                         <div id="context-buttons" class="noun-buttons">
-                            <!-- Dynamic noun buttons will appear here based on room content -->
+                            <!-- Nouns will be added dynamically based on context -->
                         </div>
                     </div>
                     
