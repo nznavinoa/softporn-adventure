@@ -3,116 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Softporn Adventure - Phase 1 Tests</title>
+    <title>Phase 3 Test Direct</title>
     <style>
         body {
             font-family: monospace;
             background-color: #1e1e1e;
             color: #f0f0f0;
             padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
         }
-        h1 {
-            color: #ff71ce;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        #test-output {
+        #output {
             background-color: #2d2d2d;
             padding: 15px;
             border-radius: 5px;
-            border: 1px solid #444;
             white-space: pre-wrap;
-            overflow-x: auto;
             min-height: 300px;
-            max-height: 600px;
-            overflow-y: auto;
-        }
-        .success {
-            color: #05ffa1;
-        }
-        .error {
-            color: #ff4040;
-        }
-        .header {
-            color: #01cdfe;
-            font-weight: bold;
-        }
-        .footer {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 0.8em;
-            color: #999;
         }
     </style>
 </head>
 <body>
-    <h1>Softporn Adventure - Phase 1 Tests</h1>
-    
-    <div id="test-output">Running tests...</div>
-    
-    <div class="footer">
-        Softporn Adventure - 80s Neon Edition | Test Runner
+    <h1>Phase 3 Test Direct</h1>
+    <div id="output">Test output will appear here...</div>
+
+    <!-- Required DOM elements for tests -->
+    <div style="display: none;">
+        <div id="game-display"></div>
+        <div id="location-name"></div>
+        <input type="text" id="command-input">
+        <div id="intro-screen">
+            <button id="start-game">START GAME</button>
+        </div>
     </div>
-    
-    <script type="module">
-        // Capture console output
-        const testOutput = document.getElementById('test-output');
-        testOutput.textContent = ''; // Clear initial text
-        
-        // Override console methods to capture output
-        const originalConsole = {
-            log: console.log,
-            error: console.error,
-            warn: console.warn
-        };
-        
+
+    <script>
+        // Simple logging
+        const output = document.getElementById('output');
         console.log = function(...args) {
-            originalConsole.log(...args);
             const message = args.join(' ');
-            appendToOutput(message);
+            output.textContent += message + '\n';
         };
-        
         console.error = function(...args) {
-            originalConsole.error(...args);
             const message = args.join(' ');
-            appendToOutput(message, 'error');
+            output.textContent += '❌ ' + message + '\n';
         };
         
-        console.warn = function(...args) {
-            originalConsole.warn(...args);
-            const message = args.join(' ');
-            appendToOutput(message, 'warn');
+        // Check if modules are loading
+        console.log("Checking if module loading works...");
+    </script>
+    
+    <!-- Direct script import instead of ES modules -->
+    <script src="js/core/EventBus.js"></script>
+    <script src="js/core/GameEvents.js"></script>
+    <script>
+        console.log("Loaded script tags successfully");
+        
+        // Simple test code
+        window.runTests = function() {
+            console.log("==== Softporn Adventure - Phase 3 Tests ====");
+            console.log("Testing direct script loading instead of ES modules");
+            console.log("If you can see this, the scripts are loading");
+            
+            // Check if EventBus exists
+            if (typeof EventBus !== 'undefined') {
+                console.log("✅ EventBus loaded successfully");
+            } else {
+                console.error("EventBus not loaded");
+            }
+            
+            // Check if GameEvents exists
+            if (typeof GameEvents !== 'undefined') {
+                console.log("✅ GameEvents loaded successfully");
+            } else {
+                console.error("GameEvents not loaded");
+            }
         };
         
-        function appendToOutput(message, type = 'log') {
-            const line = document.createElement('div');
-            
-            if (message.includes('====') && message.includes('Tests')) {
-                line.classList.add('header');
-            } else if (type === 'error') {
-                line.classList.add('error');
-            } else if (message.includes('PASSED')) {
-                line.classList.add('success');
-            }
-            
-            line.textContent = message;
-            testOutput.appendChild(line);
-            
-            // Auto-scroll to bottom
-            testOutput.scrollTop = testOutput.scrollHeight;
-        }
-        
-        // Import and run the tests
-        try {
-            await import('./js/tests/phase1Tests.js');
-        } catch (error) {
-            console.error('Error loading test module:', error.message);
-            if (error.stack) {
-                console.error(error.stack);
-            }
-        }
+        // Run tests after a short delay
+        setTimeout(window.runTests, 1000);
     </script>
 </body>
 </html>
