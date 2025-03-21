@@ -2053,3 +2053,5 @@ SUDDENLY THERE'S A FLATULENT NOISE AND THE DOLL BECOMES A POPPED BALLOON SOARING
             default:
                 this.addToGameDisplay(`<div class="message">I DON'T KNOW HOW TO USE THAT!</div>`);
         }
+    }
+}
