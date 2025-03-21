@@ -22,7 +22,7 @@ export default class UIManager {
     // DOM elements
     this.gameDisplay = null;
     this.loadingSpinner = null;
-    this.directionButtons = null; // Add this property to store the buttons container
+    this.directionButtons = null;
     
     // Game display content
     this.gameOutput = [];
@@ -30,6 +30,9 @@ export default class UIManager {
     // UI state
     this.isLoading = false;
     this.showingDialog = false;
+    
+    // Available directions in current room
+    this.availableDirections = [];
     
     // Subscribe to events
     this.subscribeToEvents();
@@ -119,6 +122,16 @@ export default class UIManager {
       if (data.newContent) {
         this.updateGameDisplay();
       }
+    });
+    
+    this.eventBus.subscribe(GameEvents.ROOM_CHANGED, (data) => {
+      console.log("UIManager received ROOM_CHANGED event for room:", data.currentRoom);
+      
+      // Update available directions
+      this.availableDirections = data.availableDirections || [];
+      
+      // Update direction buttons
+      this.updateDirectionButtons();
     });
     
     console.log("UIManager event listeners set up");
@@ -217,33 +230,70 @@ export default class UIManager {
       }
     }
     
-    const buttons = this.directionButtons.querySelectorAll('button');
-    console.log(`Found ${buttons.length} direction/action buttons`);
+    // Clear existing buttons
+    this.directionButtons.innerHTML = '';
     
-    buttons.forEach(button => {
-      // Remove any existing event listeners to avoid duplicates
-      const newButton = button.cloneNode(true);
-      button.parentNode.replaceChild(newButton, button);
+    // Create all possible direction buttons (will be shown/hidden based on availability)
+    const directions = [
+      { command: 'N', text: 'NORTH' },
+      { command: 'S', text: 'SOUTH' },
+      { command: 'E', text: 'EAST' },
+      { command: 'W', text: 'WEST' },
+      { command: 'U', text: 'UP' },
+      { command: 'D', text: 'DOWN' }
+    ];
+    
+    // Create each button
+    directions.forEach(dir => {
+      const button = document.createElement('button');
+      button.textContent = dir.text;
+      button.className = 'direction-btn';
+      button.dataset.command = dir.command;
+      button.dataset.direction = dir.text;
       
-      newButton.addEventListener('click', () => {
-        const command = newButton.dataset.command;
-        
-        if (command) {
-          console.log("Direction/action button clicked:", command);
-          
-          // Display the command
-          this.eventBus.publish(GameEvents.DISPLAY_TEXT, {
-            text: `> ${command}`,
-            className: 'command'
-          });
-          
-          // Process the command
-          this.eventBus.publish(GameEvents.COMMAND_RECEIVED, command);
-        }
-      });
+      // Initially hide all direction buttons
+      button.style.display = 'none';
+      
+      this.directionButtons.appendChild(button);
     });
     
-    console.log("Direction buttons event listeners set up");
+    // Create action buttons that are always available
+    const actions = [
+      { command: 'LOOK', text: 'LOOK' },
+      { command: 'INVENTORY', text: 'INV' }
+    ];
+    
+    // Create each action button
+    actions.forEach(action => {
+      const button = document.createElement('button');
+      button.textContent = action.text;
+      button.className = 'action-btn';
+      button.dataset.command = action.command;
+      
+      this.directionButtons.appendChild(button);
+    });
+    
+    // Set up event handling for all buttons using event delegation
+    this.directionButtons.addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      
+      const command = button.dataset.command;
+      if (!command) return;
+      
+      console.log("Direction/action button clicked:", command);
+      
+      // Display the command
+      this.eventBus.publish(GameEvents.DISPLAY_TEXT, {
+        text: `> ${command}`,
+        className: 'command'
+      });
+      
+      // Process the command
+      this.eventBus.publish(GameEvents.COMMAND_RECEIVED, command);
+    });
+    
+    console.log("Direction buttons setup complete");
   }
   
   /**
@@ -251,31 +301,49 @@ export default class UIManager {
    */
   updateDirectionButtons() {
     console.log("UIManager.updateDirectionButtons() called");
+    console.log("Available directions:", this.availableDirections);
     
-    try {
-      const directions = this.eventBus.publish(GameEvents.GET_AVAILABLE_DIRECTIONS, {});
-      
-      if (!directions || !Array.isArray(directions)) {
-        console.log("No directions available or invalid format");
-        return;
-      }
-      
-      // Show/hide direction buttons
-      document.querySelectorAll('.direction-btn').forEach(btn => {
-        const dir = btn.dataset.command;
-        if (directions.includes(dir)) {
-          btn.style.display = 'inline-block';
+    if (!this.directionButtons) {
+      console.error("Direction buttons container not found");
+      return;
+    }
+    
+    // Map of direction names to their abbreviated form
+    const directionMap = {
+      'NORTH': 'N',
+      'SOUTH': 'S',
+      'EAST': 'E',
+      'WEST': 'W',
+      'UP': 'U',
+      'DOWN': 'D'
+    };
+    
+    // Hide all direction buttons first
+    const dirButtons = this.directionButtons.querySelectorAll('.direction-btn');
+    dirButtons.forEach(button => {
+      button.style.display = 'none';
+      button.classList.remove('available-direction');
+    });
+    
+    // Show only available directions
+    if (this.availableDirections && this.availableDirections.length > 0) {
+      this.availableDirections.forEach(direction => {
+        // Find the button for this direction
+        const dir = direction.toUpperCase();
+        const abbr = directionMap[dir] || dir;
+        
+        const button = this.directionButtons.querySelector(`.direction-btn[data-command="${abbr}"]`);
+        if (button) {
+          button.style.display = 'inline-block';
+          button.classList.add('available-direction');
           
-          // Add subtle highlight effect for available directions
-          btn.classList.add('available-direction');
-        } else {
-          btn.style.display = 'none';
-          btn.classList.remove('available-direction');
+          // Add tooltip to explain the direction
+          button.setAttribute('title', `Go ${dir.toLowerCase()}`);
         }
       });
-    } catch (error) {
-      console.error("Error updating direction buttons:", error);
     }
+    
+    console.log("Direction buttons updated");
   }
   
   /**
@@ -386,7 +454,7 @@ export default class UIManager {
       const button = event.target.closest('button');
       if (!button) return;
       
-      const tooltipText = button.dataset.tooltip;
+      const tooltipText = button.dataset.tooltip || button.getAttribute('title');
       if (!tooltipText) return;
       
       // Position tooltip
