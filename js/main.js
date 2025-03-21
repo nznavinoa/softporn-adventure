@@ -13,6 +13,7 @@ import Navigation from './features/Navigation.js';
 import Inventory from './features/Inventory.js';
 import ObjectInteraction from './features/ObjectInteraction.js';
 import SpecialEvents from './features/SpecialEvents.js';
+import GameIntegration from './features/GameIntegration.js';
 
 import SlotMachine from './minigames/SlotMachine.js';
 import Blackjack from './minigames/Blackjack.js';
@@ -20,9 +21,15 @@ import Blackjack from './minigames/Blackjack.js';
 import ImageLoader from './utils/ImageLoader.js';
 
 // Import data modules
-import roomData from './data/rooms.js';
-import objectData from './data/objects.js';
-import textData from './data/text.js';
+import * as roomData from './data/rooms.js';
+import * as objectData from './data/objects.js';
+import * as textData from './data/text.js';
+
+// Create event bus instance for module communication
+const eventBus = new EventBus();
+
+// Export event bus for modules to use
+export default eventBus;
 
 // Define image manifest
 const imageManifest = {
@@ -62,22 +69,67 @@ const imageManifest = {
     'default': '/images/ui/default.png',
     'title': '/images/ui/title.jpg',
     'button': '/images/ui/button.png',
-    'inventory': '/images/ui/inventory.png'
+    'inventory': '/images/ui/inventory.png',
+    'slots': '/images/ui/slots.png',
+    'blackjack': '/images/ui/blackjack.png'
+  }
+};
+
+// Game component instances
+let game, commandParser, saveManager;
+let uiManager, roomDisplay, commandInput;
+let navigation, inventory, objectInteraction, specialEvents, gameIntegration;
+let slotMachine, blackjack;
+let imageLoader;
+
+// Analytics tracking - simple for now
+const analytics = {
+  trackEvent: (category, action, label) => {
+    if (window.debug) {
+      console.log(`Analytics: ${category} - ${action} - ${label}`);
+    }
+    // In a real implementation, this would send to an analytics service
+    eventBus.publish(GameEvents.ANALYTICS_EVENT, {
+      category,
+      action,
+      label,
+      timestamp: new Date().toISOString()
+    });
+  },
+  
+  trackScreenView: (screenName) => {
+    if (window.debug) {
+      console.log(`Screen View: ${screenName}`);
+    }
+    // In a real implementation, this would send to an analytics service
+    eventBus.publish(GameEvents.ANALYTICS_SCREEN_VIEW, {
+      screenName,
+      timestamp: new Date().toISOString()
+    });
+  },
+  
+  trackError: (errorType, errorMessage) => {
+    if (window.debug) {
+      console.error(`Error: ${errorType} - ${errorMessage}`);
+    }
+    // In a real implementation, this would send to an analytics service
+    eventBus.publish(GameEvents.ANALYTICS_ERROR, {
+      errorType,
+      errorMessage,
+      timestamp: new Date().toISOString()
+    });
   }
 };
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async function() {
   try {
-    // Create event bus
-    const eventBus = new EventBus();
-    
     // Set debug mode for development
     const debug = window.location.search.includes('debug=true');
-    eventBus.setDebugMode(debug);
+    window.debug = debug;
     
-    // Create image loader and preload images
-    const imageLoader = new ImageLoader();
+    // Create event bus and enable debug mode if needed
+    eventBus.setDebugMode(debug);
     
     // Display loading message
     const loadingMessage = document.createElement('div');
@@ -85,51 +137,53 @@ document.addEventListener('DOMContentLoaded', async function() {
     loadingMessage.textContent = 'LOADING GAME...';
     document.body.appendChild(loadingMessage);
     
-    // Preload images
-    await imageLoader.preloadImages(imageManifest);
+    // Create image loader and preload images
+    imageLoader = new ImageLoader();
+    
+    try {
+      await imageLoader.preloadImages(imageManifest);
+      eventBus.publish(GameEvents.IMAGE_LOADING_COMPLETE, {
+        status: 'success',
+        loadedImages: imageLoader.getLoadingStatus().loaded,
+        totalImages: imageLoader.getLoadingStatus().total
+      });
+    } catch (error) {
+      console.warn('Some images failed to load, but the game will continue', error);
+      analytics.trackError('image_loading', error.message);
+    }
     
     // Create core components
-    const game = new Game(eventBus, roomData, objectData, textData);
-    const commandParser = new CommandParser(eventBus);
-    const saveManager = new SaveManager(eventBus, game);
-    
-    // Create UI components
-    const roomDisplay = new RoomDisplay(eventBus, imageLoader, roomData, objectData);
-    const commandInput = new CommandInput(eventBus, {}, objectData);
-    const uiManager = new UIManager(eventBus, roomDisplay, commandInput, imageLoader);
-    
-    // Create feature modules
-    const navigation = new Navigation(eventBus, game);
-    const inventory = new Inventory(eventBus, game);
-    const objectInteraction = new ObjectInteraction(eventBus, game);
-    const specialEvents = new SpecialEvents(eventBus, game);
-    
-    // Create mini-game modules
-    const slotMachine = new SlotMachine(eventBus, game);
-    const blackjack = new Blackjack(eventBus, game);
+    initializeComponents();
     
     // Remove loading message
     loadingMessage.remove();
     
     // Initialize the game
-    eventBus.publish(GameEvents.GAME_INITIALIZED, {});
-    
-    // Set up start game button
-    document.getElementById('start-game').addEventListener('click', function() {
-      document.getElementById('intro-screen').style.display = 'none';
-      game.start();
+    eventBus.publish(GameEvents.GAME_INITIALIZED, {
+      timestamp: new Date().toISOString()
     });
     
-    // Handle "no load" button for saved games (when game prompts if saved game should be loaded)
+    // Set up start game button
+    document.getElementById('start-game')?.addEventListener('click', function() {
+      document.getElementById('intro-screen').style.display = 'none';
+      game.start();
+      analytics.trackScreenView('game_started');
+    });
+    
+    // Handle "no load" button for saved games
     document.addEventListener('click', function(event) {
       if (event.target.id === 'no-load') {
         game.initializeGame();
       }
     });
     
+    // Log successful initialization
     console.log('Softporn Adventure - 80s Neon Edition initialized successfully!');
+    analytics.trackEvent('system', 'initialization', 'success');
+    
   } catch (error) {
     console.error('Error initializing game:', error);
+    analytics.trackError('initialization', error.message);
     
     // Display error message to user
     const errorMessage = document.createElement('div');
@@ -142,3 +196,76 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.body.appendChild(errorMessage);
   }
 });
+
+// Initialize all game components
+function initializeComponents() {
+  // Create game instance
+  game = new Game();
+  
+  // Create core components
+  commandParser = new CommandParser();
+  saveManager = new SaveManager(game);
+  
+  // Create UI components
+  roomDisplay = new RoomDisplay(imageLoader, roomData, objectData);
+  commandInput = new CommandInput({}, objectData);
+  uiManager = new UIManager(roomDisplay, commandInput, imageLoader);
+  
+  // Create feature modules
+  navigation = new Navigation(game);
+  inventory = new Inventory(game);
+  objectInteraction = new ObjectInteraction(game);
+  specialEvents = new SpecialEvents(game);
+  gameIntegration = new GameIntegration(game);
+  
+  // Create mini-game modules
+  slotMachine = new SlotMachine(game);
+  blackjack = new Blackjack(game);
+  
+  // Set up global error handling for analytics
+  window.addEventListener('error', (event) => {
+    analytics.trackError('javascript', event.message);
+  });
+  
+  // Set up performance monitoring (basic)
+  if (window.debug && window.performance) {
+    const observer = new PerformanceObserver((list) => {
+      list.getEntries().forEach((entry) => {
+        console.log(`Performance: ${entry.name}: ${entry.duration}ms`);
+      });
+    });
+    
+    observer.observe({ entryTypes: ['measure'] });
+  }
+}
+
+// Global helper method to measure performance (when debug is true)
+window.measurePerformance = (name, fn) => {
+  if (!window.debug || !window.performance) return fn();
+  
+  const start = `${name}-start`;
+  const end = `${name}-end`;
+  
+  performance.mark(start);
+  const result = fn();
+  performance.mark(end);
+  performance.measure(name, start, end);
+  
+  return result;
+};
+
+// Export key components for testing
+export { 
+  game, 
+  eventBus, 
+  commandParser, 
+  saveManager, 
+  uiManager, 
+  navigation, 
+  inventory, 
+  objectInteraction, 
+  specialEvents, 
+  gameIntegration, 
+  slotMachine, 
+  blackjack 
+};
