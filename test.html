@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Softporn Adventure - Phase 1 Tests</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #f0f0f0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #ff71ce;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        #test-output {
+            background-color: #2d2d2d;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            min-height: 300px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #05ffa1;
+        }
+        .error {
+            color: #ff4040;
+        }
+        .header {
+            color: #01cdfe;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.8em;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <h1>Softporn Adventure - Phase 1 Tests</h1>
+    
+    <div id="test-output">Running tests...</div>
+    
+    <div class="footer">
+        Softporn Adventure - 80s Neon Edition | Test Runner
+    </div>
+    
+    <script type="module">
+        // Capture console output
+        const testOutput = document.getElementById('test-output');
+        testOutput.textContent = ''; // Clear initial text
+        
+        // Override console methods to capture output
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn
+        };
+        
+        console.log = function(...args) {
+            originalConsole.log(...args);
+            const message = args.join(' ');
+            appendToOutput(message);
+        };
+        
+        console.error = function(...args) {
+            originalConsole.error(...args);
+            const message = args.join(' ');
+            appendToOutput(message, 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalConsole.warn(...args);
+            const message = args.join(' ');
+            appendToOutput(message, 'warn');
+        };
+        
+        function appendToOutput(message, type = 'log') {
+            const line = document.createElement('div');
+            
+            if (message.includes('====') && message.includes('Tests')) {
+                line.classList.add('header');
+            } else if (type === 'error') {
+                line.classList.add('error');
+            } else if (message.includes('PASSED')) {
+                line.classList.add('success');
+            }
+            
+            line.textContent = message;
+            testOutput.appendChild(line);
+            
+            // Auto-scroll to bottom
+            testOutput.scrollTop = testOutput.scrollHeight;
+        }
+        
+        // Import and run the tests
+        try {
+            await import('./js/tests/phase1Tests.js');
+        } catch (error) {
+            console.error('Error loading test module:', error.message);
+            if (error.stack) {
+                console.error(error.stack);
+            }
+        }
+    </script>
+</body>
+</html>
