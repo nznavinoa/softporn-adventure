@@ -31,6 +31,10 @@ export default class CommandInput {
     // Currently selected verb (for two-part commands)
     this.selectedVerb = null;
     
+    // Add debounce tracking
+    this.lastCommandTime = 0;
+    this.COMMAND_DEBOUNCE_INTERVAL = 300; // milliseconds
+    
     // Subscribe to events
     this.subscribeToEvents();
     
@@ -62,8 +66,10 @@ export default class CommandInput {
       this.setupVerbButtons();
     }
     
+    // Update direction buttons setup to use event delegation
     if (this.directionButtons) {
-      this.setupDirectionButtons();
+      this.directionButtons.addEventListener('click', this.handleDirectionButtonClick.bind(this));
+      console.log("Direction buttons event delegation set up");
     }
     
     console.log("CommandInput setup complete");
@@ -304,35 +310,35 @@ export default class CommandInput {
   }
   
   /**
-   * Set up direction buttons
+   * Handle direction button clicks with debounce
+   * @param {Event} event - Click event
    */
-  setupDirectionButtons() {
-    console.log("Setting up direction buttons");
+  handleDirectionButtonClick(event) {
+    const button = event.target.closest('.direction-btn');
+    if (!button) return;
     
-    if (!this.directionButtons) return;
+    const command = button.dataset.command;
+    if (!command) return;
     
-    const buttons = this.directionButtons.querySelectorAll('button');
+    // Debounce mechanism
+    const currentTime = Date.now();
+    if (currentTime - this.lastCommandTime < this.COMMAND_DEBOUNCE_INTERVAL) {
+      console.log("Command debounced:", command);
+      return;
+    }
     
-    buttons.forEach(button => {
-      button.addEventListener('click', () => {
-        const command = button.dataset.command;
-        
-        if (command) {
-          console.log("Direction/action button clicked:", command);
-          
-          // Display the command
-          this.eventBus.publish(GameEvents.DISPLAY_TEXT, {
-            text: `> ${command}`,
-            className: 'command'
-          });
-          
-          // Process the command
-          this.eventBus.publish(GameEvents.COMMAND_RECEIVED, command);
-        }
-      });
+    this.lastCommandTime = currentTime;
+    
+    console.log("Direction button clicked:", command);
+    
+    // Display the command
+    this.eventBus.publish(GameEvents.DISPLAY_TEXT, {
+      text: `> ${command}`,
+      className: 'command'
     });
     
-    console.log("Direction buttons event listeners set up");
+    // Process the command
+    this.eventBus.publish(GameEvents.COMMAND_RECEIVED, command);
   }
   
   /**

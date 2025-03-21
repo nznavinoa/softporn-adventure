@@ -53,28 +53,51 @@ export default class EventBus {
      * @return {any} Return value from the last event handler, if any
      */
     publish(event, data) {
+        const maxIterations = 10; // Prevent potential infinite loops
+        let iterationCount = 0;
+        
         if (this.debugMode) {
-            console.log(`[EventBus] Publishing: ${event}`, data);
+            console.log(`[EventBus] Publishing event: ${event}`, data);
         }
         
-        if (!this.subscribers[event]) return null;
+        if (!this.subscribers[event]) {
+            if (this.debugMode) {
+                console.log(`[EventBus] No subscribers found for: ${event}`);
+            }
+            return null;
+        }
         
         let returnValue = null;
         
-        this.subscribers[event].forEach(callback => {
+        // Clone subscribers to prevent modification during iteration
+        const subscribersCopy = [...this.subscribers[event]];
+        
+        for (const callback of subscribersCopy) {
+            if (iterationCount >= maxIterations) {
+                console.warn(`[EventBus] Maximum event iteration limit reached for ${event}`);
+                break;
+            }
+            
             try {
                 const result = callback(data);
-                // Store the result from the last callback (useful for query events)
                 returnValue = result;
+                iterationCount++;
+                
+                if (this.debugMode) {
+                    console.log(`[EventBus] Callback ${iterationCount} executed for ${event}`);
+                }
             } catch (error) {
                 console.error(`[EventBus] Error in subscriber for event ${event}:`, error);
                 
-                // If we're debugging, show the stack trace
                 if (this.debugMode) {
                     console.error(error.stack);
                 }
             }
-        });
+        }
+        
+        if (this.debugMode) {
+            console.log(`[EventBus] Finished publishing ${event} (${iterationCount} callbacks)`);
+        }
         
         return returnValue;
     }

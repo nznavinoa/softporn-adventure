@@ -82,7 +82,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (game) {
           console.log("Starting game...");
-          game.start();
+          // Publish a single, controlled game start event
+          eventBus.publish(GameEvents.GAME_STARTED, {
+            suppressMultipleEvents: true
+          });
         } else {
           console.error("Game instance not initialized");
         }

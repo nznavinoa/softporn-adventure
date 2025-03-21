@@ -74,6 +74,29 @@
     transition: 0s;
 }
 
+.direction-btn {
+    transition: all 0.3s ease;
+}
+
+.direction-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: scale(0.9);
+}
+
+.direction-btn.available-direction {
+    opacity: 1;
+    transform: scale(1);
+    background-color: rgba(1, 205, 254, 0.3); /* Soft neon blue background */
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 8px var(--neon-blue);
+}
+
+.direction-btn.available-direction:hover {
+    background-color: rgba(1, 205, 254, 0.5);
+    transform: scale(1.05);
+}
+
 .selected-verb {
     background-color: rgba(5, 255, 161, 0.5);
     transform: translateY(-1px);

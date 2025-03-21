@@ -77,6 +77,9 @@ export default class Game {
         // Game output history
         this.gameOutput = [];
         
+        // Add gameStarted flag
+        this.gameStarted = false;
+        
         // Set up event subscriptions
         this.setupEventListeners();
         
@@ -98,10 +101,17 @@ export default class Game {
     }
     
     // Start the game
-    start() {
+    start(options = {}) {
         console.log("Game.start() method called");
         
         try {
+            // Prevent multiple initializations
+            if (this.gameStarted) {
+                console.log("Game already started, ignoring start call");
+                return false;
+            }
+            this.gameStarted = true;
+            
             // Display intro text
             this.addToGameDisplay(`<div class="message">
                 ${introText}
@@ -110,11 +120,13 @@ export default class Game {
             // Ask if a saved game should be loaded
             this.addToGameDisplay(`<div class="system-message">SHOULD A SAVED GAME BE LOADED? <button id="no-load">N</button></div>`);
             
-            // Directly publish game started event
-            console.log("Publishing GAME_STARTED event");
-            eventBus.publish(GameEvents.GAME_STARTED, {
-                timestamp: new Date().toISOString()
-            });
+            // Only publish initialization events once
+            if (!options.suppressMultipleEvents) {
+                console.log("Publishing GAME_STARTED event");
+                eventBus.publish(GameEvents.GAME_STARTED, {
+                    timestamp: new Date().toISOString()
+                });
+            }
             
             // Publish UI refresh event
             eventBus.publish(GameEvents.UI_REFRESH, {
@@ -162,20 +174,49 @@ export default class Game {
         }
     }
     
-    // Add content to the game display
+    /**
+     * Add content to the game display with enhanced validation and logging
+     * @param {string} content - HTML content to add
+     * @param {string} className - Optional CSS class name
+     */
     addToGameDisplay(content, className = "") {
         try {
-            console.log("Adding to game display:", content.substring(0, 50) + "...");
+            console.log("Adding to game display - RAW CONTENT:", content);
             
-            this.gameOutput.push({ content, className });
+            // Validate content
+            if (!content || typeof content !== 'string') {
+                console.error("Invalid content passed to addToGameDisplay:", content);
+                return;
+            }
             
-            // Notify UI to update
+            // Trim and validate HTML tags
+            const trimmedContent = content.trim();
+            if (!trimmedContent.startsWith('<') || !trimmedContent.endsWith('>')) {
+                console.warn("Content may not be valid HTML:", trimmedContent);
+            }
+            
+            // Create a full log entry
+            const logEntry = { 
+                content: trimmedContent, 
+                className, 
+                timestamp: new Date().toISOString() 
+            };
+            
+            // Add to game output
+            this.gameOutput.push(logEntry);
+            
+            // Publish display update event with detailed logging
             eventBus.publish(GameEvents.DISPLAY_UPDATED, {
-                newContent: { content, className },
-                gameOutput: this.gameOutput
+                newContent: logEntry,
+                gameOutput: this.gameOutput,
+                sourceMethod: (new Error()).stack.split('\n')[2].trim()
             });
+            
+            // Additional debugging for UI
+            console.log("Game Output Length:", this.gameOutput.length);
+            console.log("Last Added Content:", JSON.stringify(logEntry));
         } catch (error) {
-            console.error("Error adding to game display:", error);
+            console.error("Critical error in addToGameDisplay:", error);
         }
     }
     

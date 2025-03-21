@@ -175,36 +175,49 @@ export default class Navigation {
         }
     }
     
-    // Display room after movement
+    /**
+     * Display room after movement
+     */
     displayRoom() {
         try {
             // Clear previous display
             this.game.gameOutput = [];
             
-            // Display room name
+            // Display room name and validate data access
             const roomName = roomDescriptions[this.game.currentRoom] || `ROOM ${this.game.currentRoom}`;
             this.game.addToGameDisplay(`<div class="room-title">${roomName}</div>`);
             
-            // Get exits description
-            const roomIndex = roomExits[this.game.currentRoom]?.[0];
-            const exitDescription = otherAreasDescriptions[roomIndex] || "NOWHERE";
+            // Get and validate exit information
+            const exitInfo = roomExits[this.game.currentRoom] || [this.game.currentRoom, []];
+            const exitType = otherAreasDescriptions[exitInfo[0]] || "NOWHERE";
             
-            // Display available exits
-            this.game.addToGameDisplay(`<div class="directions">OTHER AREAS ARE: ${exitDescription}</div>`);
+            // Display available exits with proper HTML structure
+            this.game.addToGameDisplay(`<div class="directions">OTHER AREAS ARE: ${exitType}</div>`);
             
-            // Display items in the room
-            if (this.game.roomObjects[this.game.currentRoom] && this.game.roomObjects[this.game.currentRoom].length > 0) {
-                const items = this.game.roomObjects[this.game.currentRoom].map(
-                    itemId => this.game.getItemName(itemId)
-                ).join(", ");
+            // Display items in room with proper validation
+            if (this.game.roomObjects[this.game.currentRoom]?.length > 0) {
+                const items = this.game.roomObjects[this.game.currentRoom]
+                    .map(itemId => this.game.getItemName(itemId))
+                    .filter(Boolean)
+                    .join(", ");
                 
                 this.game.addToGameDisplay(`<div class="items">ITEMS IN SIGHT ARE: ${items}</div>`);
             } else {
                 this.game.addToGameDisplay(`<div class="items">ITEMS IN SIGHT ARE: NOTHING AT ALL!!!!!</div>`);
             }
             
-            // Special room handling (will be expanded)
+            // Notify UI of room change with complete data
+            eventBus.publish(GameEvents.ROOM_CHANGED, {
+                previousRoom: this.game.previousRoom || null,
+                currentRoom: this.game.currentRoom,
+                roomName: roomName,
+                availableDirections: this.getAvailableDirections(),
+                roomObjects: this.game.getRoomObjects()
+            });
+            
+            // Handle special room behaviors
             this.handleSpecialRooms();
+            
         } catch (error) {
             console.error("Error displaying room:", error);
             this.game.addToGameDisplay(`<div class="message">ERROR DISPLAYING ROOM.</div>`);
