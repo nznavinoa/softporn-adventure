@@ -7,6 +7,12 @@ export default class EventBus {
         console.log("EventBus constructor called");
         this.subscribers = {};
         this.debugMode = false;
+        
+        // FIX: Add event tracking to detect recursion
+        this.activeEvents = new Set();
+        this.maxRecursionDepth = 10;
+        this.eventCounts = {};
+        
         console.log("EventBus initialized");
     }
 
@@ -53,6 +59,22 @@ export default class EventBus {
      * @return {any} Return value from the last event handler, if any
      */
     publish(event, data) {
+        // FIX: Add recursion detection
+        if (this.activeEvents.has(event)) {
+            if (!this.eventCounts[event]) {
+                this.eventCounts[event] = 0;
+            }
+            this.eventCounts[event]++;
+            
+            if (this.eventCounts[event] > this.maxRecursionDepth) {
+                console.error(`[EventBus] Maximum recursion depth reached for event: ${event}. Stopping recursion.`);
+                return null;
+            }
+        } else {
+            this.activeEvents.add(event);
+            this.eventCounts[event] = 1;
+        }
+        
         const maxIterations = 10; // Prevent potential infinite loops
         let iterationCount = 0;
         
@@ -64,6 +86,7 @@ export default class EventBus {
             if (this.debugMode) {
                 console.log(`[EventBus] No subscribers found for: ${event}`);
             }
+            this.activeEvents.delete(event);
             return null;
         }
         
@@ -99,6 +122,8 @@ export default class EventBus {
             console.log(`[EventBus] Finished publishing ${event} (${iterationCount} callbacks)`);
         }
         
+        this.activeEvents.delete(event);
+        
         return returnValue;
     }
 
@@ -109,5 +134,26 @@ export default class EventBus {
     setDebugMode(enabled) {
         this.debugMode = enabled;
         console.log(`[EventBus] Debug mode: ${enabled ? 'ENABLED' : 'DISABLED'}`);
+    }
+    
+    /**
+     * FIX: Reset event tracking
+     */
+    reset() {
+        this.activeEvents.clear();
+        this.eventCounts = {};
+        console.log("[EventBus] Event tracking reset");
+    }
+    
+    /**
+     * FIX: Get event statistics
+     * @return {Object} Event statistics
+     */
+    getEventStats() {
+        return {
+            subscriberCount: Object.keys(this.subscribers).reduce((total, event) => total + this.subscribers[event].length, 0),
+            eventTypes: Object.keys(this.subscribers).length,
+            eventCounts: { ...this.eventCounts }
+        };
     }
 }

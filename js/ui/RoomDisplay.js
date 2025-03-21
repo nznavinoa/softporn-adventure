@@ -30,6 +30,9 @@ export default class RoomDisplay {
     
     // Subscribe to events
     this.subscribeToEvents();
+
+    // FIX: Initialize UI elements right away
+    this.setupUI();
     
     console.log("RoomDisplay initialized");
   }
@@ -75,7 +78,11 @@ export default class RoomDisplay {
     
     this.eventBus.subscribe(GameEvents.GAME_INITIALIZED, () => {
       console.log("RoomDisplay received GAME_INITIALIZED event");
-      this.setupUI();
+      // FIX: We already set up in constructor
+      console.log("Ensuring UI is initialized on game start");
+      if (!this.locationImage || !this.locationName) {
+        this.setupUI();
+      }
     });
     
     console.log("RoomDisplay event listeners set up");
@@ -109,6 +116,7 @@ export default class RoomDisplay {
     console.log("RoomDisplay.displayRoom() called for room:", roomId);
     
     if (!this.locationImage || !this.locationName) {
+      console.log("Display elements not found, trying to initialize again");
       this.setupUI();
     }
     
@@ -119,14 +127,25 @@ export default class RoomDisplay {
     if (this.locationName) {
       this.locationName.textContent = roomDesc;
       console.log("Updated location name:", roomDesc);
+    } else {
+      console.error("Location name element still not found");
     }
     
     // Apply room image
     if (this.locationImage && this.imageLoader) {
       // Use room ID to determine image name (e.g., "hallway" for room 1)
       const roomImageName = this.getRoomImageName(roomId);
-      this.imageLoader.applyImage(this.locationImage, 'locations', roomImageName);
-      console.log("Applied room image:", roomImageName);
+      
+      // FIX: Direct style application as fallback
+      try {
+        this.imageLoader.applyImage(this.locationImage, 'locations', roomImageName);
+        console.log("Applied room image using imageLoader:", roomImageName);
+      } catch (error) {
+        console.error("Failed to apply image with imageLoader:", error);
+        // Fallback to direct styling
+        this.locationImage.style.backgroundImage = "url('/images/locations/default.jpg')";
+        console.log("Applied fallback room image with direct styling");
+      }
     } else {
       console.error("Cannot update location image: missing DOM element or imageLoader");
     }

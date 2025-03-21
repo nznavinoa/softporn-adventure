@@ -21,8 +21,6 @@ export default class CommandInput {
     this.inputField = null;
     this.verbButtons = null;
     this.nounButtons = null;
-    this.directionButtons = null;
-    this.actionButtons = null;
     
     // Command history
     this.commandHistory = [];
@@ -39,6 +37,9 @@ export default class CommandInput {
     this.lastCommandTime = 0;
     this.COMMAND_DEBOUNCE_INTERVAL = 300; // milliseconds
     
+    // FIX: Flag to track if we've already set up handlers
+    this.handlersInitialized = false;
+    
     // Subscribe to events
     this.subscribeToEvents();
     
@@ -51,6 +52,12 @@ export default class CommandInput {
   setupUI() {
     console.log("CommandInput.setupUI() called");
     
+    // FIX: Check if we've already initialized to prevent duplicate handlers
+    if (this.handlersInitialized) {
+      console.log("CommandInput handlers already initialized, skipping setup");
+      return;
+    }
+    
     this.inputField = document.getElementById('command-input');
     if (!this.inputField) {
       console.error("Command input field not found in the DOM");
@@ -60,7 +67,6 @@ export default class CommandInput {
     
     this.verbButtons = document.querySelector('.verb-buttons');
     this.nounButtons = document.getElementById('context-buttons');
-    this.directionButtons = document.querySelector('.buttons');
     
     if (this.inputField) {
       this.setupCommandInput();
@@ -71,11 +77,8 @@ export default class CommandInput {
       this.updateVerbButtons();
     }
     
-    // Update direction buttons setup to use event delegation
-    if (this.directionButtons) {
-      this.directionButtons.addEventListener('click', this.handleDirectionButtonClick.bind(this));
-      console.log("Direction buttons event delegation set up");
-    }
+    // FIX: Mark as initialized
+    this.handlersInitialized = true;
     
     console.log("CommandInput setup complete");
   }
@@ -149,9 +152,18 @@ export default class CommandInput {
     
     if (!this.inputField) return;
     
+    // FIX: Check if we already added a keydown listener
+    if (this.inputField.hasAttribute('data-has-keydown-listener')) {
+      console.log("Command input already has keydown listener");
+      return;
+    }
+    
     this.inputField.addEventListener('keydown', (event) => {
       this.handleKeyPress(event);
     });
+    
+    // Mark as having a listener
+    this.inputField.setAttribute('data-has-keydown-listener', 'true');
     
     // Focus the input field when clicking anywhere in the game display
     const gameDisplay = document.getElementById('game-display');
@@ -202,6 +214,14 @@ export default class CommandInput {
     
     if (command) {
       console.log("Submitting command:", command);
+      
+      // FIX: Debounce rapid submissions
+      const now = Date.now();
+      if (now - this.lastCommandTime < this.COMMAND_DEBOUNCE_INTERVAL) {
+        console.log("Debounced command submission:", command);
+        return;
+      }
+      this.lastCommandTime = now;
       
       // Display the command in the game output
       this.eventBus.publish(GameEvents.DISPLAY_TEXT, {
@@ -352,6 +372,14 @@ export default class CommandInput {
   handleVerbButtonClick(verb) {
     console.log("Verb button clicked:", verb);
     
+    // FIX: Debounce rapid clicks
+    const now = Date.now();
+    if (now - this.lastCommandTime < this.COMMAND_DEBOUNCE_INTERVAL) {
+      console.log("Debounced verb button click:", verb);
+      return;
+    }
+    this.lastCommandTime = now;
+    
     // Special handling for inventory command
     if (verb === 'INVENTORY') {
       this.eventBus.publish(GameEvents.COMMAND_RECEIVED, 'INVENTORY');
@@ -408,38 +436,6 @@ export default class CommandInput {
   }
   
   /**
-   * Handle direction button clicks with debounce
-   * @param {Event} event - Click event
-   */
-  handleDirectionButtonClick(event) {
-    const button = event.target.closest('.direction-btn');
-    if (!button) return;
-    
-    const command = button.dataset.command;
-    if (!command) return;
-    
-    // Debounce mechanism
-    const currentTime = Date.now();
-    if (currentTime - this.lastCommandTime < this.COMMAND_DEBOUNCE_INTERVAL) {
-      console.log("Command debounced:", command);
-      return;
-    }
-    
-    this.lastCommandTime = currentTime;
-    
-    console.log("Direction button clicked:", command);
-    
-    // Display the command
-    this.eventBus.publish(GameEvents.DISPLAY_TEXT, {
-      text: `> ${command}`,
-      className: 'command'
-    });
-    
-    // Process the command
-    this.eventBus.publish(GameEvents.COMMAND_RECEIVED, command);
-  }
-  
-  /**
    * Update context-sensitive noun buttons
    * @param {number} roomId - Current room ID
    * @param {Array} roomObjects - Objects in the room (optional)
@@ -484,8 +480,16 @@ export default class CommandInput {
       button.dataset.objectId = objectId;
       button.dataset.objectType = this.getObjectType(objectId);
       
-      // Add event listener
+      // Add event listener with debounce
       button.addEventListener('click', () => {
+        // FIX: Debounce rapid clicks
+        const now = Date.now();
+        if (now - this.lastCommandTime < this.COMMAND_DEBOUNCE_INTERVAL) {
+          console.log("Debounced noun button click:", objectName);
+          return;
+        }
+        this.lastCommandTime = now;
+        
         this.handleNounButtonClick(objectId, objectName);
       });
       
@@ -539,8 +543,16 @@ export default class CommandInput {
       button.dataset.objectType = this.getObjectType(itemId);
       button.dataset.inInventory = "true";
       
-      // Add event listener
+      // Add event listener with debounce
       button.addEventListener('click', () => {
+        // FIX: Debounce rapid clicks
+        const now = Date.now();
+        if (now - this.lastCommandTime < this.COMMAND_DEBOUNCE_INTERVAL) {
+          console.log("Debounced inventory button click:", itemName);
+          return;
+        }
+        this.lastCommandTime = now;
+        
         this.handleNounButtonClick(itemId, itemName);
       });
       

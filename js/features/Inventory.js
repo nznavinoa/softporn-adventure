@@ -16,10 +16,16 @@ export default class Inventory {
         
         // Set up event subscriptions
         this.setupEventListeners();
+        
+        console.log("Inventory module initialized");
     }
     
     setupEventListeners() {
+        console.log("Setting up Inventory event listeners");
+        
         eventBus.subscribe(GameEvents.COMMAND_PROCESSED, (data) => {
+            console.log("Inventory received COMMAND_PROCESSED event:", data);
+            
             // Handle inventory-related commands
             switch (data.verb) {
                 case "TAKE":
@@ -31,6 +37,7 @@ export default class Inventory {
                     this.dropObject(data.noun);
                     break;
                 case "INVENTORY":
+                    console.log("Inventory command received, showing inventory");
                     this.showInventory();
                     break;
             }
@@ -301,6 +308,8 @@ export default class Inventory {
     // Show inventory
     showInventory() {
         try {
+            console.log("Showing inventory with items:", this.game.inventory);
+            
             if (this.game.inventory.length === 0) {
                 this.game.addToGameDisplay(`<div class="message">I'M CARRYING NOTHING!!</div>`);
                 return;

@@ -62,6 +62,9 @@ export default class CommandParser {
                 return;
             }
             
+            // FIX: Add debug output for command processing
+            console.log(`Processing command: "${command}"`);
+            
             // Check for special two-word commands
             if (command === "TV ON") {
                 eventBus.publish(GameEvents.COMMAND_PROCESSED, { verb: "TV", noun: "ON" });
@@ -98,6 +101,22 @@ export default class CommandParser {
             // Check for special commands (no noun)
             if (this.specialCommands.includes(command)) {
                 console.log(`Special command detected: ${command}`);
+                
+                // FIX: Add special handling for LOOK and INVENTORY
+                if (command === "LOOK") {
+                    // Ensure ObjectInteraction.lookAt gets called with null noun
+                    eventBus.publish(GameEvents.COMMAND_PROCESSED, { verb: "LOOK", noun: null });
+                    console.log("Published LOOK command with null noun");
+                    return;
+                }
+                
+                if (command === "INVENTORY") {
+                    // Ensure Inventory.showInventory gets called
+                    eventBus.publish(GameEvents.COMMAND_PROCESSED, { verb: "INVENTORY", noun: null });
+                    console.log("Published INVENTORY command with null noun");
+                    return;
+                }
+                
                 eventBus.publish(GameEvents.COMMAND_PROCESSED, { verb: command, noun: null });
                 return;
             }
@@ -106,6 +125,13 @@ export default class CommandParser {
             if (this.commandShortcuts[command]) {
                 const expandedCommand = this.commandShortcuts[command];
                 console.log(`Command shortcut expanded: ${command} to ${expandedCommand}`);
+                
+                // FIX: Handle expanded commands for LOOK and INVENTORY
+                if (expandedCommand === "LOOK" || expandedCommand === "INVENTORY") {
+                    eventBus.publish(GameEvents.COMMAND_PROCESSED, { verb: expandedCommand, noun: null });
+                    return;
+                }
+                
                 eventBus.publish(GameEvents.COMMAND_PROCESSED, { verb: expandedCommand, noun: null });
                 return;
             }
