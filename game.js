@@ -1,321 +1,4 @@
-}
-
-// UI Handler for the Softporn Adventure game
-class GameUI {
-    constructor() {
-        this.game = new SoftpornAdventure();
-        this.gameDisplay = document.getElementById('game-display');
-        this.commandInput = document.getElementById('command-input');
-        this.contextButtons = document.getElementById('context-buttons');
-        this.locationImage = document.getElementById('location-image');
-        this.locationName = document.getElementById('location-name');
-        this.selectedVerb = null;
-        this.setupEventListeners();
-        
-        // Set up intro screen
-        document.getElementById('start-game').addEventListener('click', () => {
-            document.getElementById('intro-screen').style.display = 'none';
-            this.startGame();
-        });
-        
-        // Extend the game's updateUI method to use our UI methods
-        this.game.updateUI = () => {
-            this.updateDirectionButtons();
-            this.updateVerbButtons();
-            this.updateContextButtons();
-            this.updateLocationName();
-            this.updateLocationImage();
-        };
-    }
-    
-    // Start the game
-    startGame() {
-        this.game.start();
-        this.updateGameDisplay();
-    }
-    
-    // Update the game display with the latest output
-    updateGameDisplay() {
-        // Check if there's new content to display
-        if (this.game.gameOutput.length > 0) {
-            // Append all new content
-            for (const output of this.game.gameOutput) {
-                const element = document.createElement('div');
-                element.innerHTML = output.content;
-                if (output.className) {
-                    element.className = output.className;
-                }
-                this.gameDisplay.appendChild(element);
-            }
-            
-            // Clear the output array
-            this.game.gameOutput = [];
-            
-            // Scroll to the bottom
-            this.gameDisplay.scrollTop = this.gameDisplay.scrollHeight;
-            
-            // Set up any dynamic elements that were added
-            this.setupDynamicElements();
-            
-            // Update UI elements based on current game state
-            this.game.updateUI();
-        }
-    }
-    
-    // Update the location image based on current room
-    updateLocationImage() {
-        const roomImage = this.game.getRoomImageUrl();
-        const roomGradient = this.game.getRoomGradient();
-        
-        // Try to load the image
-        if (roomImage) {
-            const tempImg = new Image();
-            tempImg.onload = () => {
-                this.locationImage.style.backgroundImage = `url(${roomImage})`;
-                this.locationImage.classList.add('has-image');
-            };
-            tempImg.onerror = () => {
-                // If image fails to load, use gradient fallback
-                this.locationImage.style.backgroundImage = roomGradient;
-                this.locationImage.classList.remove('has-image');
-            };
-            tempImg.src = roomImage;
-        } else {
-            // Use gradient fallback if no image is defined
-            this.locationImage.style.backgroundImage = roomGradient;
-            this.locationImage.classList.remove('has-image');
-        }
-    }
-    
-    // Update direction buttons based on available exits
-    updateDirectionButtons() {
-        const availableDirections = this.game.getAvailableDirections();
-        
-        // Make all direction buttons invisible initially
-        document.querySelectorAll('.direction-btn').forEach(button => {
-            button.style.display = 'none';
-        });
-        
-        // Show only buttons for available directions
-        availableDirections.forEach(direction => {
-            let dirCode;
-            switch(direction) {
-                case "NORTH": dirCode = "N"; break;
-                case "SOUTH": dirCode = "S"; break;
-                case "EAST": dirCode = "E"; break;
-                case "WEST": dirCode = "W"; break;
-                case "UP": dirCode = "U"; break;
-                case "DOWN": dirCode = "D"; break;
-                default: dirCode = direction; break;
-            }
-            
-            const button = document.querySelector(`.direction-btn[data-command="${dirCode}"]`);
-            if (button) {
-                button.style.display = 'inline-block';
-            }
-        });
-    }
-    
-    // Update verb buttons based on current context
-    updateVerbButtons() {
-        const applicableVerbs = this.game.getApplicableVerbs();
-        
-        // Get the verb buttons container
-        const verbButtons = document.querySelector('.verb-buttons');
-        if (!verbButtons) return;
-        
-        // Clear existing buttons
-        verbButtons.innerHTML = '';
-        
-        // Add buttons for applicable verbs
-        applicableVerbs.forEach(verb => {
-            const button = document.createElement('button');
-            button.className = 'verb-btn';
-            button.textContent = verb;
-            button.setAttribute('data-verb', verb);
-            
-            // Add click event
-            button.addEventListener('click', () => {
-                // Toggle selection of this verb
-                if (button.classList.contains('selected-verb')) {
-                    // Deselect if already selected
-                    this.resetVerbSelection();
-                } else {
-                    // Select this verb
-                    this.resetVerbSelection();
-                    button.classList.add('selected-verb');
-                    this.selectedVerb = button.getAttribute('data-verb');
-                }
-            });
-            
-            verbButtons.appendChild(button);
-        });
-    }
-    
-    // Update context buttons (nouns) based on room objects and inventory
-    updateContextButtons() {
-        // Clear existing buttons
-        this.contextButtons.innerHTML = '';
-        
-        // Get context nouns
-        const contextNouns = this.game.getContextNouns();
-        
-        // Add buttons for each noun
-        contextNouns.forEach(noun => {
-            const button = document.createElement('button');
-            button.className = 'noun-btn';
-            button.textContent = noun.name;
-            button.setAttribute('data-obj-id', noun.id);
-            button.setAttribute('data-name', noun.name);
-            
-            // Add special class for inventory items
-            if (noun.inInventory) {
-                button.classList.add('inventory-item-btn');
-            }
-            
-            // Add click event
-            button.addEventListener('click', () => {
-                if (this.selectedVerb) {
-                    // If a verb is selected, combine them
-                    const command = `${this.selectedVerb} ${noun.name}`;
-                    this.game.processCommand(command);
-                    this.resetVerbSelection();
-                    this.updateGameDisplay();
-                } else {
-                    // If no verb selected, default to LOOK
-                    const command = `LOOK ${noun.name}`;
-                    this.game.processCommand(command);
-                    this.updateGameDisplay();
-                }
-            });
-            
-            this.contextButtons.appendChild(button);
-        });
-    }
-    
-    // Update location name display
-    updateLocationName() {
-        if (this.locationName) {
-            const room = this.game.rooms[this.game.currentRoom];
-            this.locationName.textContent = room ? room.name : "";
-        }
-    }
-    
-    // Reset verb selection
-    resetVerbSelection() {
-        document.querySelectorAll('.verb-btn').forEach(btn => {
-            btn.classList.remove('selected-verb');
-        });
-        this.selectedVerb = null;
-    }
-    
-    // Set up event listeners for the UI
-    setupEventListeners() {
-        // Command input
-        this.commandInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const command = this.commandInput.value.trim();
-                if (command) {
-                    this.game.processCommand(command);
-                    this.commandInput.value = '';
-                    this.resetVerbSelection();
-                    this.updateGameDisplay();
-                }
-            }
-        });
-        
-        // Direction buttons
-        document.querySelectorAll('.direction-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                const command = button.getAttribute('data-command');
-                this.game.processCommand(command);
-                this.resetVerbSelection();
-                this.updateGameDisplay();
-            });
-        });
-        
-        // Action buttons
-        document.querySelectorAll('.action-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                const command = button.getAttribute('data-command');
-                this.game.processCommand(command);
-                this.resetVerbSelection();
-                this.updateGameDisplay();
-            });
-        });
-    }
-    
-    // Set up dynamic elements that were added to the display
-    setupDynamicElements() {
-        // Game loading button
-        const noLoadBtn = document.getElementById('no-load');
-        if (noLoadBtn) {
-            noLoadBtn.addEventListener('click', () => {
-                this.game.initializeGame();
-                this.updateGameDisplay();
-            });
-        }
-        
-        // Door selection in game over screen
-        document.querySelectorAll('[id^="door-"]').forEach(button => {
-            button.addEventListener('click', () => {
-                const door = button.id.split('-')[1];
-                this.game.chooseDoor(door);
-                this.updateGameDisplay();
-            });
-        });
-        
-        // Channel selection
-        const channelSelect = document.getElementById('channel-select');
-        if (channelSelect) {
-            channelSelect.addEventListener('change', () => {
-                if (channelSelect.value) {
-                    this.game.chooseChannel(channelSelect.value);
-                    this.updateGameDisplay();
-                }
-            });
-        }
-        
-        // Channel change buttons
-        const yesChannelBtn = document.getElementById('yes-channel');
-        if (yesChannelBtn) {
-            yesChannelBtn.addEventListener('click', () => {
-                this.game.tvPower('ON');
-                this.updateGameDisplay();
-            });
-        }
-        
-        const noChannelBtn = document.getElementById('no-channel');
-        if (noChannelBtn) {
-            noChannelBtn.addEventListener('click', () => {
-                // Just close the dialog
-                this.updateGameDisplay();
-            });
-        }
-        
-        // Slot machine buttons
-        const yesSlots = document.getElementById('yes-slots');
-        if (yesSlots) {
-            yesSlots.addEventListener('click', () => {
-                this.game.playSlotRound();
-                this.updateGameDisplay();
-            });
-        }
-        
-        const noSlots = document.getElementById('no-slots');
-        if (noSlots) {
-            noSlots.addEventListener('click', () => {
-                // Just close the prompt
-                this.updateGameDisplay();
-            });
-        }
-    }
-}
-
-// Initialize the game when the DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    const gameUI = new GameUI();
-});// Softporn Adventure - 80s Neon Web Edition
+// Softporn Adventure - 80s Neon Web Edition
 // Game logic adapted from the original 1981 Apple BASIC code
 
 class SoftpornAdventure {
@@ -378,7 +61,8 @@ class SoftpornAdventure {
             "TALK": ["CHARACTER"],
             "PUSH": ["PUSHABLE"],
             "WEAR": ["WEARABLE"]
-        }
+        };
+    }
     
     // Choose a door in the game over screen
     chooseDoor(door) {
@@ -442,7 +126,6 @@ class SoftpornAdventure {
             this.displayRoom();
         }, 1000);
     }
-}
     
     // Drop an object
     dropObject(noun) {
@@ -1020,7 +703,7 @@ class SoftpornAdventure {
                 break;
                 
             case 73: // Wallet
-                this.addToGameDisplay(`<div class="message">IT CONTAINS ${this.money}00</div>`);
+                this.addToGameDisplay(`<div class="message">IT CONTAINS $${this.money}00</div>`);
                 break;
                 
             case 74: // Inflatable doll
@@ -1197,7 +880,195 @@ class SoftpornAdventure {
             default:
                 this.addToGameDisplay(`<div class="message">THEY DON'T SEEM INTERESTED IN CONVERSATION.</div>`);
         }
-    };
+    }
+    
+    // Initialize rooms data
+    initializeRooms() {
+        this.rooms = {
+            1: { name: "HALLWAY", desc: "I'M IN A HALLWAY." },
+            2: { name: "BATHROOM", desc: "I'M IN A BATHROOM." },
+            3: { name: "BAR", desc: "I'M IN A SLEAZY BAR." },
+            4: { name: "STREET", desc: "I'M ON A STREET OUTSIDE THE BAR." },
+            5: { name: "BACKROOM", desc: "I'M IN THE BACKROOM." },
+            6: { name: "DUMPSTER", desc: "I'M IN A FILTHY DUMPSTER!" },
+            7: { name: "ROOM", desc: "I'M INSIDE THE ROOM I BROKE INTO!" },
+            8: { name: "LEDGE", desc: "I'M ON A WINDOW LEDGE." },
+            9: { name: "HOOKER_BEDROOM", desc: "I'M IN A HOOKER'S BEDROOM." },
+            10: { name: "BALCONY", desc: "I'M ON A HOOKER'S BALCONY." },
+            11: { name: "DOWNTOWN", desc: "I'M ON A DOWNTOWN STREET." },
+            12: { name: "MARRIAGE_CENTER", desc: "I'M IN A QUICKIE MARRIAGE CENTER." },
+            13: { name: "CASINO", desc: "I'M IN THE MAIN CASINO ROOM." },
+            14: { name: "BLACKJACK", desc: "I'M IN THE '21 ROOM'." },
+            15: { name: "HOTEL_LOBBY", desc: "I'M IN THE LOBBY OF THE HOTEL." },
+            16: { name: "HONEYMOON_SUITE", desc: "I'M IN THE HONEYMOON SUITE." },
+            17: { name: "HOTEL_HALLWAY", desc: "I'M IN THE HOTEL HALLWAY." },
+            18: { name: "HONEYMOON_BALCONY", desc: "I'M ON THE HONEYMOONER'S BALCONY." },
+            19: { name: "HOTEL_DESK", desc: "I'M AT THE HOTEL DESK." },
+            20: { name: "PHONE_BOOTH", desc: "I'M IN A TELEPHONE BOOTH." },
+            21: { name: "DISCO", desc: "I'M IN THE DISCO." },
+            22: { name: "RESIDENTIAL", desc: "I'M ON A RESIDENTIAL STREET." },
+            23: { name: "DISCO_ENTRANCE", desc: "I'M IN THE DISCO'S ENTRANCE." },
+            24: { name: "PHARMACY", desc: "I'M IN THE PHARMACY." },
+            25: { name: "PENTHOUSE_FOYER", desc: "I'M IN THE PENTHOUSE FOYER." },
+            26: { name: "JACUZZI", desc: "I'M IN THE JACUZZI!" },
+            27: { name: "KITCHEN", desc: "I'M IN THE KITCHEN." },
+            28: { name: "GARDEN", desc: "I'M IN THE GARDEN." },
+            29: { name: "LIVING_ROOM", desc: "I'M IN THE LIVING ROOM." },
+            30: { name: "PENTHOUSE_PORCH", desc: "I'M ON THE PENTHOUSE PORCH." }
+        };
+        
+        // Room exits - format: room_id: [direction_type, available_directions]
+        this.roomExits = {
+            1: [1, ["NORTH", "EAST"]],
+            2: [2, ["SOUTH"]],
+            3: [3, ["NORTH", "WEST"]],
+            4: [4, ["NORTH", "EAST", "WEST"]],
+            5: [5, ["WEST", "UP"]],
+            6: [6, ["WEST"]],
+            7: [7, ["NORTH"]],
+            8: [8, ["SOUTH", "EAST"]],
+            9: [9, ["NORTH", "DOWN"]],
+            10: [10, ["SOUTH", "DOWN"]],
+            11: [11, ["SOUTH", "EAST", "WEST"]],
+            12: [12, ["EAST", "UP"]],
+            13: [13, ["SOUTH", "WEST", "DOWN"]],
+            14: [14, ["WEST", "DOWN"]],
+            15: [15, ["SOUTH", "WEST"]],
+            16: [19, ["EAST"]],
+            17: [17, ["NORTH", "EAST", "UP"]],
+            18: [18, ["UP"]],
+            19: [8, ["SOUTH", "EAST"]],
+            20: [19, ["EAST"]],
+            21: [17, ["NORTH", "EAST", "UP"]],
+            22: [7, ["NORTH"]],
+            23: [2, ["SOUTH"]], // Door is initially closed
+            24: [6, ["WEST"]],
+            25: [12, ["EAST", "UP"]],
+            26: [18, ["UP"]],
+            27: [6, ["WEST"]],
+            28: [19, ["EAST"]],
+            29: [9, ["NORTH", "DOWN"]],
+            30: [10, ["SOUTH", "DOWN"]]
+        };
+    }
+    
+    // Initialize objects data
+    initializeObjects() {
+        // Format: room_id: [list of object IDs]
+        this.roomObjects = {
+            1: [8, 14, 84], // Desk, Button, Remote control
+            2: [9, 11, 12], // Washbasin, Mirror, Toilet
+            3: [10, 15, 52, 53], // Graffiti, Bartender, Whiskey, Beer
+            4: [18], // Billboard
+            5: [16, 33, 20], // Pimp, Table, TV
+            6: [56], // Garbage
+            7: [],
+            8: [46], // Window
+            9: [17, 26], // Hooker, Bed
+            10: [],
+            11: [48], // Sign
+            12: [19], // Preacher
+            13: [21], // Slot machines
+            14: [22, 41], // Cards, Dealer
+            15: [44, 47], // Bushes, Plant
+            16: [],
+            17: [],
+            18: [],
+            19: [25, 34], // Blonde, Telephone
+            20: [34], // Telephone
+            21: [32, 49, 60], // Waitress, Girl, Candy
+            22: [27, 48], // Bum, Sign
+            23: [23, 30], // Curtain, Door
+            24: [29, 68, 69], // Display rack, Magazine, Rubber
+            25: [],
+            26: [49, 36], // Girl, Sink
+            27: [38, 39], // Water on/off
+            28: [44, 45], // Bushes, Tree
+            29: [35, 74], // Closet, Doll
+            30: []
+        };
+        
+        // Object names for reference
+        this.objectNames = {
+            8: "A DESK",
+            9: "A WASHBASIN",
+            10: "GRAFITTI",
+            11: "A MIRROR",
+            12: "A TOILET",
+            13: "A BUSINESSMAN",
+            14: "A BUTTON",
+            15: "THE BARTENDER",
+            16: "A BIG DUDE!",
+            17: "A FUNKY HOOKER",
+            18: "A BILLBOARD",
+            19: "A PREACHER",
+            20: "A TV",
+            21: "SLOT MACHINES",
+            22: "CARDS",
+            23: "A CURTAIN",
+            24: "AN ASHTRAY",
+            25: "A VOLUPTOUS BLONDE",
+            26: "A BED",
+            27: "A BUM",
+            28: "A PEEP HOLE",
+            29: "A DISPLAY RACK",
+            30: "A DOOR TO THE WEST",
+            32: "A WAITRESS",
+            33: "A TABLE",
+            34: "A TELEPHONE",
+            35: "A CLOSET",
+            36: "A SINK",
+            38: "WATER ON",
+            39: "WATER OFF",
+            41: "A DEALER",
+            42: "A CABINET",
+            43: "AN ELEVATOR",
+            44: "BUSHES",
+            45: "A TREE",
+            46: "A WINDOW",
+            47: "A PLANT",
+            48: "A SIGN",
+            49: "A GIRL",
+            50: "A NEWSPAPER",
+            51: "A WEDDING RING",
+            52: "A SHOT OF WHISKEY",
+            53: "A BEER",
+            55: "A HAMMER",
+            56: "GARBAGE",
+            57: "FLOWERS",
+            58: "THE CORE OF AN APPLE",
+            59: "SEEDS",
+            60: "CANDY",
+            61: "PILLS",
+            64: "A PASSCARD",
+            65: "A RADIO",
+            66: "A POCKET KNIFE",
+            68: "ADVENTUREBOY MAGAZINE",
+            69: "A RUBBER",
+            72: "A BOTTLE OF WINE",
+            73: "A WALLET",
+            74: "AN INFLATABLE DOLL",
+            75: "AN APPLE",
+            76: "A PITCHER",
+            77: "A STOOL",
+            81: "A ROPE",
+            83: "A MUSHROOM",
+            84: "A REMOTE CONTROL UNIT"
+        };
+        
+        // Special text content
+        this.specialTexts = {
+            1: "OH NO!!!!! I PAID FOR THIS?!?!?\nTHIS BEAST IS REALLY UGLY!!!!\nJEEZZZZ.....I HOPE I DON'T GET THE CLAP FROM THIS HOOKER.....................\nWELL...SHE SEEMS TO BE ANNOYED THAT I   HAVEN'T JUMPED ON HER YET....GO TO IT   STUD!!!!!",
+            2: "IT'S THE GAMBLER'S GAZETTE!!\nTHERE'S AN ARTICLE HERE WHICH TELLS HOW TO ACTIVATE THE GAMES AT THE    \nADVENTURER'S HOTEL! IT SAYS THAT        BLACKJACK CAN BE PLAYED BY ENTERING\n'PLAY 21'. THE SLOT MACHINES START WITH 'PLAY SLOTS'!\nSE!\n'21' CAN BE BEAT!!                      THE TRICK IS- ALWAYS PLAY WITH BLUE     CARDS AND ALWAYS BET $2!",
+            3: "HMMMMM..... AN INTERESTING MAGAZINE WITHA NICE CENTERFOLD!\nTHE FEATURE ARTICLE IS ABOUT HOW TO PICKUP AN INNOCENT GIRL AT A DISCO.\nIT SAYS- 'SHOWER HER WITH PRESENTS.     DANCING WON'T HURT EITHER. \nAND WINE IS ALWAYS GOOD TO GET THINGS   MOVING!'",
+            4: "CUTE AND INNOCENT! JUST THE WAY I LIKE  MY WOMEN.\nOH- THIS GIRL IS GREAT! SHE HAS A       BEAUTIFUL CALIFORNIA TAN....AND PERT    LITTLE BREASTS...A TRIM WAIST.........  AND WELL ROUNDED HIPS!!\nI DREAM ABOUT GETTING THIS NICE A GIRL. I HOPE YOU PLAY THIS GAME WELL ENOUGH SOI CAN HAVE MY JOLLYS WITH HER!\nYOU COULD MAKE YOUR PUPPET A VERY HAPPY MAN....................................",
+            5: "WHAT A BEAUTIFUL FACE!!! SHE'S LEANING  BACK IN THE JACUZZI WITH HER EYES CLOSEDAND SEEMS EXTREMELY RELAXED.\nTHE WATER IS BUBBLING UP AROUND HER....\nA '10'!! SHE'S SO BEAUTIFUL.............A GUY REALLY COULD FALL IN LOVE WITH\nA GIRL LIKE THIS. I PRESUME HER NAME IS 'EVE'....AT LEAST THATS WHAT THE THE    TOWEL NEXT TO HER HAS EMBROIDERED ON IT.",
+            6: "A TAXI PULLS UP AND SCREECHES TO A HALT!\n I GET IN THE BACK AND SIT DOWN.\n A SIGN SAYS 'WE SERVICE 3 DESTINATIONS. WHEN ASKED- PLEASE SPECIFY- DISCO.......CASINO....OR BAR.\nTHE DRIVER TURNS AND ASKS               'WHERE TO MAC??'",
+            7: "THE ELEVATOR DOORS OPEN....I GET IN.\nAS THE DOORS CLOSE MUSIC STARTS PLAYING-IT'S THE USUAL ELEVATOR STUFF...BORING!\nWE START TO MOVE.....AFTER A FEW SECONDSTHE ELEVATOR STOPS.\nTHE DOORS OPEN AND I GET OUT.",
+            8: "SHE SAYS 'ME FIRST!!!!!\nSHE TAKES MY THROBBING TOOL INTO HER\nMOUTH!!!! SHE STARTS GOING TO WORK......FEELS SO GOOD!!!!!!\nTHEN SHE SMILES AS SHE BITES IT OFF!    SHE SAYS 'NO ORAL SEX IN THIS GAME!!!!!!SUFFER!!!!!!!'",
+            9: "WELL MY SON....HERE'S MY STORY.         I CAME HERE MANY YEARS AGO-\nAND MY GOALS WERE THE SAME AS YOURS.....BUT THIS ADVENTURE WAS TOO MUCH FOR ME!\nHERE'S A GIFT.......CARRY IT WITH YOU   AT ALL TIMES!!!!!\nTHERE'S SOME KINKY GIRLS IN THIS TOWN!! AND YOU NEVER KNOW WHEN YOU MAY NEED TO USE THIS TO DEFEND YOURSELF!!!!!!!",
+            10: "SHE'S WEARING A THE TIGHTEST JEANS!\nWOW.......WHAT A BODY!!!!! 36-24-35!!   THIS GIRLS DERRIERE IS SENSATIONAL!!\nAND THE SHIRT? SEE THROUGH- AND WHAT I  SEE I LIKE!\nAS MY EYES RELUCTANTLY ROAM FROM HER    BODY I SEE BRIGHT BLUE EYES- AND A SMILETHAT DAZZLES ME. I THINK SHE LIKES ME!"
+        };
         
         // Map of object IDs to their types
         this.objectTypes = {
@@ -1323,193 +1194,6 @@ class SoftpornAdventure {
             28: "linear-gradient(to bottom, #031A80, #000A43)", // Garden
             29: "linear-gradient(to bottom, #220C5A, #120458)", // Living Room
             30: "linear-gradient(to bottom, #031A80, #000A43)"  // Penthouse Porch
-        };
-    }
-    
-    initializeRooms() {
-        this.rooms = {
-            1: { name: "HALLWAY", desc: "I'M IN A HALLWAY." },
-            2: { name: "BATHROOM", desc: "I'M IN A BATHROOM." },
-            3: { name: "BAR", desc: "I'M IN A SLEAZY BAR." },
-            4: { name: "STREET", desc: "I'M ON A STREET OUTSIDE THE BAR." },
-            5: { name: "BACKROOM", desc: "I'M IN THE BACKROOM." },
-            6: { name: "DUMPSTER", desc: "I'M IN A FILTHY DUMPSTER!" },
-            7: { name: "ROOM", desc: "I'M INSIDE THE ROOM I BROKE INTO!" },
-            8: { name: "LEDGE", desc: "I'M ON A WINDOW LEDGE." },
-            9: { name: "HOOKER_BEDROOM", desc: "I'M IN A HOOKER'S BEDROOM." },
-            10: { name: "BALCONY", desc: "I'M ON A HOOKER'S BALCONY." },
-            11: { name: "DOWNTOWN", desc: "I'M ON A DOWNTOWN STREET." },
-            12: { name: "MARRIAGE_CENTER", desc: "I'M IN A QUICKIE MARRIAGE CENTER." },
-            13: { name: "CASINO", desc: "I'M IN THE MAIN CASINO ROOM." },
-            14: { name: "BLACKJACK", desc: "I'M IN THE '21 ROOM'." },
-            15: { name: "HOTEL_LOBBY", desc: "I'M IN THE LOBBY OF THE HOTEL." },
-            16: { name: "HONEYMOON_SUITE", desc: "I'M IN THE HONEYMOON SUITE." },
-            17: { name: "HOTEL_HALLWAY", desc: "I'M IN THE HOTEL HALLWAY." },
-            18: { name: "HONEYMOON_BALCONY", desc: "I'M ON THE HONEYMOONER'S BALCONY." },
-            19: { name: "HOTEL_DESK", desc: "I'M AT THE HOTEL DESK." },
-            20: { name: "PHONE_BOOTH", desc: "I'M IN A TELEPHONE BOOTH." },
-            21: { name: "DISCO", desc: "I'M IN THE DISCO." },
-            22: { name: "RESIDENTIAL", desc: "I'M ON A RESIDENTIAL STREET." },
-            23: { name: "DISCO_ENTRANCE", desc: "I'M IN THE DISCO'S ENTRANCE." },
-            24: { name: "PHARMACY", desc: "I'M IN THE PHARMACY." },
-            25: { name: "PENTHOUSE_FOYER", desc: "I'M IN THE PENTHOUSE FOYER." },
-            26: { name: "JACUZZI", desc: "I'M IN THE JACUZZI!" },
-            27: { name: "KITCHEN", desc: "I'M IN THE KITCHEN." },
-            28: { name: "GARDEN", desc: "I'M IN THE GARDEN." },
-            29: { name: "LIVING_ROOM", desc: "I'M IN THE LIVING ROOM." },
-            30: { name: "PENTHOUSE_PORCH", desc: "I'M ON THE PENTHOUSE PORCH." }
-        };
-        
-        // Room exits - format: room_id: [direction_type, available_directions]
-        this.roomExits = {
-            1: [1, ["NORTH", "EAST"]],
-            2: [2, ["SOUTH"]],
-            3: [3, ["NORTH", "WEST"]],
-            4: [4, ["NORTH", "EAST", "WEST"]],
-            5: [5, ["WEST", "UP"]],
-            6: [6, ["WEST"]],
-            7: [7, ["NORTH"]],
-            8: [8, ["SOUTH", "EAST"]],
-            9: [9, ["NORTH", "DOWN"]],
-            10: [10, ["SOUTH", "DOWN"]],
-            11: [11, ["SOUTH", "EAST", "WEST"]],
-            12: [12, ["EAST", "UP"]],
-            13: [13, ["SOUTH", "WEST", "DOWN"]],
-            14: [14, ["WEST", "DOWN"]],
-            15: [15, ["SOUTH", "WEST"]],
-            16: [19, ["EAST"]],
-            17: [17, ["NORTH", "EAST", "UP"]],
-            18: [18, ["UP"]],
-            19: [8, ["SOUTH", "EAST"]],
-            20: [19, ["EAST"]],
-            21: [17, ["NORTH", "EAST", "UP"]],
-            22: [7, ["NORTH"]],
-            23: [2, ["SOUTH"]], // Door is initially closed
-            24: [6, ["WEST"]],
-            25: [12, ["EAST", "UP"]],
-            26: [18, ["UP"]],
-            27: [6, ["WEST"]],
-            28: [19, ["EAST"]],
-            29: [9, ["NORTH", "DOWN"]],
-            30: [10, ["SOUTH", "DOWN"]]
-        };
-    }
-    
-    initializeObjects() {
-        // Format: room_id: [list of object IDs]
-        this.roomObjects = {
-            1: [8, 14, 84], // Desk, Button, Remote control
-            2: [9, 11, 12], // Washbasin, Mirror, Toilet
-            3: [10, 15, 52, 53], // Graffiti, Bartender, Whiskey, Beer
-            4: [18], // Billboard
-            5: [16, 33, 20], // Pimp, Table, TV
-            6: [56], // Garbage
-            7: [],
-            8: [46], // Window
-            9: [17, 26], // Hooker, Bed
-            10: [],
-            11: [48], // Sign
-            12: [19], // Preacher
-            13: [21], // Slot machines
-            14: [22, 41], // Cards, Dealer
-            15: [44, 47], // Bushes, Plant
-            16: [],
-            17: [],
-            18: [],
-            19: [25, 34], // Blonde, Telephone
-            20: [34], // Telephone
-            21: [32, 49, 60], // Waitress, Girl, Candy
-            22: [27, 48], // Bum, Sign
-            23: [23, 30], // Curtain, Door
-            24: [29, 68, 69], // Display rack, Magazine, Rubber
-            25: [],
-            26: [49, 36], // Girl, Sink
-            27: [38, 39], // Water on/off
-            28: [44, 45], // Bushes, Tree
-            29: [35, 74], // Closet, Doll
-            30: []
-        };
-        
-        // Object names for reference
-        this.objectNames = {
-            8: "A DESK",
-            9: "A WASHBASIN",
-            10: "GRAFITTI",
-            11: "A MIRROR",
-            12: "A TOILET",
-            13: "A BUSINESSMAN",
-            14: "A BUTTON",
-            15: "THE BARTENDER",
-            16: "A BIG DUDE!",
-            17: "A FUNKY HOOKER",
-            18: "A BILLBOARD",
-            19: "A PREACHER",
-            20: "A TV",
-            21: "SLOT MACHINES",
-            22: "CARDS",
-            23: "A CURTAIN",
-            24: "AN ASHTRAY",
-            25: "A VOLUPTOUS BLONDE",
-            26: "A BED",
-            27: "A BUM",
-            28: "A PEEP HOLE",
-            29: "A DISPLAY RACK",
-            30: "A DOOR TO THE WEST",
-            32: "A WAITRESS",
-            33: "A TABLE",
-            34: "A TELEPHONE",
-            35: "A CLOSET",
-            36: "A SINK",
-            38: "WATER ON",
-            39: "WATER OFF",
-            41: "A DEALER",
-            42: "A CABINET",
-            43: "AN ELEVATOR",
-            44: "BUSHES",
-            45: "A TREE",
-            46: "A WINDOW",
-            47: "A PLANT",
-            48: "A SIGN",
-            49: "A GIRL",
-            50: "A NEWSPAPER",
-            51: "A WEDDING RING",
-            52: "A SHOT OF WHISKEY",
-            53: "A BEER",
-            55: "A HAMMER",
-            56: "GARBAGE",
-            57: "FLOWERS",
-            58: "THE CORE OF AN APPLE",
-            59: "SEEDS",
-            60: "CANDY",
-            61: "PILLS",
-            64: "A PASSCARD",
-            65: "A RADIO",
-            66: "A POCKET KNIFE",
-            68: "ADVENTUREBOY MAGAZINE",
-            69: "A RUBBER",
-            72: "A BOTTLE OF WINE",
-            73: "A WALLET",
-            74: "AN INFLATABLE DOLL",
-            75: "AN APPLE",
-            76: "A PITCHER",
-            77: "A STOOL",
-            81: "A ROPE",
-            83: "A MUSHROOM",
-            84: "A REMOTE CONTROL UNIT"
-        };
-        
-        // Special text content
-        this.specialTexts = {
-            1: "OH NO!!!!! I PAID FOR THIS?!?!?\nTHIS BEAST IS REALLY UGLY!!!!\nJEEZZZZ.....I HOPE I DON'T GET THE CLAP FROM THIS HOOKER.....................\nWELL...SHE SEEMS TO BE ANNOYED THAT I   HAVEN'T JUMPED ON HER YET....GO TO IT   STUD!!!!!",
-            2: "IT'S THE GAMBLER'S GAZETTE!!\nTHERE'S AN ARTICLE HERE WHICH TELLS HOW TO ACTIVATE THE GAMES AT THE    \nADVENTURER'S HOTEL! IT SAYS THAT        BLACKJACK CAN BE PLAYED BY ENTERING\n'PLAY 21'. THE SLOT MACHINES START WITH 'PLAY SLOTS'!\nSE!\n'21' CAN BE BEAT!!                      THE TRICK IS- ALWAYS PLAY WITH BLUE     CARDS AND ALWAYS BET $2!",
-            3: "HMMMMM..... AN INTERESTING MAGAZINE WITHA NICE CENTERFOLD!\nTHE FEATURE ARTICLE IS ABOUT HOW TO PICKUP AN INNOCENT GIRL AT A DISCO.\nIT SAYS- 'SHOWER HER WITH PRESENTS.     DANCING WON'T HURT EITHER. \nAND WINE IS ALWAYS GOOD TO GET THINGS   MOVING!'",
-            4: "CUTE AND INNOCENT! JUST THE WAY I LIKE  MY WOMEN.\nOH- THIS GIRL IS GREAT! SHE HAS A       BEAUTIFUL CALIFORNIA TAN....AND PERT    LITTLE BREASTS...A TRIM WAIST.........  AND WELL ROUNDED HIPS!!\nI DREAM ABOUT GETTING THIS NICE A GIRL. I HOPE YOU PLAY THIS GAME WELL ENOUGH SOI CAN HAVE MY JOLLYS WITH HER!\nYOU COULD MAKE YOUR PUPPET A VERY HAPPY MAN....................................",
-            5: "WHAT A BEAUTIFUL FACE!!! SHE'S LEANING  BACK IN THE JACUZZI WITH HER EYES CLOSEDAND SEEMS EXTREMELY RELAXED.\nTHE WATER IS BUBBLING UP AROUND HER....\nA '10'!! SHE'S SO BEAUTIFUL.............A GUY REALLY COULD FALL IN LOVE WITH\nA GIRL LIKE THIS. I PRESUME HER NAME IS 'EVE'....AT LEAST THATS WHAT THE THE    TOWEL NEXT TO HER HAS EMBROIDERED ON IT.",
-            6: "A TAXI PULLS UP AND SCREECHES TO A HALT!\n I GET IN THE BACK AND SIT DOWN.\n A SIGN SAYS 'WE SERVICE 3 DESTINATIONS. WHEN ASKED- PLEASE SPECIFY- DISCO.......CASINO....OR BAR.\nTHE DRIVER TURNS AND ASKS               'WHERE TO MAC??'",
-            7: "THE ELEVATOR DOORS OPEN....I GET IN.\nAS THE DOORS CLOSE MUSIC STARTS PLAYING-IT'S THE USUAL ELEVATOR STUFF...BORING!\nWE START TO MOVE.....AFTER A FEW SECONDSTHE ELEVATOR STOPS.\nTHE DOORS OPEN AND I GET OUT.",
-            8: "SHE SAYS 'ME FIRST!!!!!\nSHE TAKES MY THROBBING TOOL INTO HER\nMOUTH!!!! SHE STARTS GOING TO WORK......FEELS SO GOOD!!!!!!\nTHEN SHE SMILES AS SHE BITES IT OFF!    SHE SAYS 'NO ORAL SEX IN THIS GAME!!!!!!SUFFER!!!!!!!'",
-            9: "WELL MY SON....HERE'S MY STORY.         I CAME HERE MANY YEARS AGO-\nAND MY GOALS WERE THE SAME AS YOURS.....BUT THIS ADVENTURE WAS TOO MUCH FOR ME!\nHERE'S A GIFT.......CARRY IT WITH YOU   AT ALL TIMES!!!!!\nTHERE'S SOME KINKY GIRLS IN THIS TOWN!! AND YOU NEVER KNOW WHEN YOU MAY NEED TO USE THIS TO DEFEND YOURSELF!!!!!!!",
-            10: "SHE'S WEARING A THE TIGHTEST JEANS!\nWOW.......WHAT A BODY!!!!! 36-24-35!!   THIS GIRLS DERRIERE IS SENSATIONAL!!\nAND THE SHIRT? SEE THROUGH- AND WHAT I  SEE I LIKE!\nAS MY EYES RELUCTANTLY ROAM FROM HER    BODY I SEE BRIGHT BLUE EYES- AND A SMILETHAT DAZZLES ME. I THINK SHE LIKES ME!"
         };
     }
     
@@ -1852,3 +1536,389 @@ class SoftpornAdventure {
         // If we get here, we don't recognize the command
         this.addToGameDisplay(`<div class="message">I DON'T KNOW HOW TO ${verb} SOMETHING!</div>`);
     }
+    
+    // Methods to be implemented:
+    openObject(noun) {
+        this.addToGameDisplay(`<div class="message">OPEN not yet implemented</div>`);
+    }
+    
+    buyObject(noun) {
+        this.addToGameDisplay(`<div class="message">BUY not yet implemented</div>`);
+    }
+    
+    useObject(noun) {
+        this.addToGameDisplay(`<div class="message">USE not yet implemented</div>`);
+    }
+    
+    tvPower(state) {
+        if (state === "ON") {
+            this.tvOn = 1;
+            this.addToGameDisplay(`<div class="message">THE TV IS NOW ON</div>`);
+            this.tvOnLook();
+        } else {
+            this.tvOn = 0;
+            this.addToGameDisplay(`<div class="message">THE TV IS NOW OFF</div>`);
+        }
+    }
+    
+    playSlots() {
+        this.addToGameDisplay(`<div class="message">SLOTS not yet implemented</div>`);
+    }
+    
+    playBlackjack() {
+        this.addToGameDisplay(`<div class="message">BLACKJACK not yet implemented</div>`);
+    }
+    
+    pushObject(noun) {
+        this.addToGameDisplay(`<div class="message">PUSH not yet implemented</div>`);
+    }
+    
+    seduceObject(noun) {
+        this.addToGameDisplay(`<div class="message">That action not yet implemented</div>`);
+    }
+    
+    climbObject(noun) {
+        this.addToGameDisplay(`<div class="message">CLIMB not yet implemented</div>`);
+    }
+    
+    waterControl(state) {
+        if (state === "ON") {
+            this.waterOn = 1;
+            this.addToGameDisplay(`<div class="message">THE WATER IS NOW ON</div>`);
+        } else {
+            this.waterOn = 0;
+            this.addToGameDisplay(`<div class="message">THE WATER IS NOW OFF</div>`);
+        }
+    }
+    
+    fillObject(noun) {
+        this.addToGameDisplay(`<div class="message">FILL not yet implemented</div>`);
+    }
+    
+    jump() {
+        if (this.currentRoom === 8) {
+            this.addToGameDisplay(`<div class="message">AAAAAEEEEEIIIIIIII!!!!!!!!!</div>`);
+            this.addToGameDisplay(`<div class="message">SPLAAATTTTT!!!!!</div>`);
+            this.gameOver();
+        } else {
+            this.addToGameDisplay(`<div class="message">WHOOOPEEEEE!!!</div>`);
+        }
+    }
+}
+
+// UI Handler for the Softporn Adventure game
+class GameUI {
+    constructor() {
+        this.game = new SoftpornAdventure();
+        this.gameDisplay = document.getElementById('game-display');
+        this.commandInput = document.getElementById('command-input');
+        this.contextButtons = document.getElementById('context-buttons');
+        this.locationImage = document.getElementById('location-image');
+        this.locationName = document.getElementById('location-name');
+        this.selectedVerb = null;
+        this.setupEventListeners();
+        
+        // Set up intro screen
+        document.getElementById('start-game').addEventListener('click', () => {
+            document.getElementById('intro-screen').style.display = 'none';
+            this.startGame();
+        });
+        
+        // Extend the game's updateUI method to use our UI methods
+        this.game.updateUI = () => {
+            this.updateDirectionButtons();
+            this.updateVerbButtons();
+            this.updateContextButtons();
+            this.updateLocationName();
+            this.updateLocationImage();
+        };
+    }
+    
+    // Start the game
+    startGame() {
+        this.game.start();
+        this.updateGameDisplay();
+    }
+    
+    // Update the game display with the latest output
+    updateGameDisplay() {
+        // Check if there's new content to display
+        if (this.game.gameOutput.length > 0) {
+            // Append all new content
+            for (const output of this.game.gameOutput) {
+                const element = document.createElement('div');
+                element.innerHTML = output.content;
+                if (output.className) {
+                    element.className = output.className;
+                }
+                this.gameDisplay.appendChild(element);
+            }
+            
+            // Clear the output array
+            this.game.gameOutput = [];
+            
+            // Scroll to the bottom
+            this.gameDisplay.scrollTop = this.gameDisplay.scrollHeight;
+            
+            // Set up any dynamic elements that were added
+            this.setupDynamicElements();
+            
+            // Update UI elements based on current game state
+            this.game.updateUI();
+        }
+    }
+    
+    // Update the location image based on current room
+    updateLocationImage() {
+        const roomImage = this.game.getRoomImageUrl();
+        const roomGradient = this.game.getRoomGradient();
+        
+        // Try to load the image
+        if (roomImage) {
+            const tempImg = new Image();
+            tempImg.onload = () => {
+                this.locationImage.style.backgroundImage = `url(${roomImage})`;
+                this.locationImage.classList.add('has-image');
+            };
+            tempImg.onerror = () => {
+                // If image fails to load, use gradient fallback
+                this.locationImage.style.backgroundImage = roomGradient;
+                this.locationImage.classList.remove('has-image');
+            };
+            tempImg.src = roomImage;
+        } else {
+            // Use gradient fallback if no image is defined
+            this.locationImage.style.backgroundImage = roomGradient;
+            this.locationImage.classList.remove('has-image');
+        }
+    }
+    
+    // Update direction buttons based on available exits
+    updateDirectionButtons() {
+        const availableDirections = this.game.getAvailableDirections();
+        
+        // Make all direction buttons invisible initially
+        document.querySelectorAll('.direction-btn').forEach(button => {
+            button.style.display = 'none';
+        });
+        
+        // Show only buttons for available directions
+        availableDirections.forEach(direction => {
+            let dirCode;
+            switch(direction) {
+                case "NORTH": dirCode = "N"; break;
+                case "SOUTH": dirCode = "S"; break;
+                case "EAST": dirCode = "E"; break;
+                case "WEST": dirCode = "W"; break;
+                case "UP": dirCode = "U"; break;
+                case "DOWN": dirCode = "D"; break;
+                default: dirCode = direction; break;
+            }
+            
+            const button = document.querySelector(`.direction-btn[data-command="${dirCode}"]`);
+            if (button) {
+                button.style.display = 'inline-block';
+            }
+        });
+    }
+    
+    // Update verb buttons based on current context
+    updateVerbButtons() {
+        const applicableVerbs = this.game.getApplicableVerbs();
+        
+        // Get the verb buttons container
+        const verbButtons = document.querySelector('.verb-buttons');
+        if (!verbButtons) return;
+        
+        // Clear existing buttons
+        verbButtons.innerHTML = '';
+        
+        // Add buttons for applicable verbs
+        applicableVerbs.forEach(verb => {
+            const button = document.createElement('button');
+            button.className = 'verb-btn';
+            button.textContent = verb;
+            button.setAttribute('data-verb', verb);
+            
+            // Add click event
+            button.addEventListener('click', () => {
+                // Toggle selection of this verb
+                if (button.classList.contains('selected-verb')) {
+                    // Deselect if already selected
+                    this.resetVerbSelection();
+                } else {
+                    // Select this verb
+                    this.resetVerbSelection();
+                    button.classList.add('selected-verb');
+                    this.selectedVerb = button.getAttribute('data-verb');
+                }
+            });
+            
+            verbButtons.appendChild(button);
+        });
+    }
+    
+    // Update context buttons (nouns) based on room objects and inventory
+    updateContextButtons() {
+        // Clear existing buttons
+        this.contextButtons.innerHTML = '';
+        
+        // Get context nouns
+        const contextNouns = this.game.getContextNouns();
+        
+        // Add buttons for each noun
+        contextNouns.forEach(noun => {
+            const button = document.createElement('button');
+            button.className = 'noun-btn';
+            button.textContent = noun.name;
+            button.setAttribute('data-obj-id', noun.id);
+            button.setAttribute('data-name', noun.name);
+            
+            // Add special class for inventory items
+            if (noun.inInventory) {
+                button.classList.add('inventory-item-btn');
+            }
+            
+            // Add click event
+            button.addEventListener('click', () => {
+                if (this.selectedVerb) {
+                    // If a verb is selected, combine them
+                    const command = `${this.selectedVerb} ${noun.name}`;
+                    this.game.processCommand(command);
+                    this.resetVerbSelection();
+                    this.updateGameDisplay();
+                } else {
+                    // If no verb selected, default to LOOK
+                    const command = `LOOK ${noun.name}`;
+                    this.game.processCommand(command);
+                    this.updateGameDisplay();
+                }
+            });
+            
+            this.contextButtons.appendChild(button);
+        });
+    }
+    
+    // Update location name display
+    updateLocationName() {
+        if (this.locationName) {
+            const room = this.game.rooms[this.game.currentRoom];
+            this.locationName.textContent = room ? room.name : "";
+        }
+    }
+    
+    // Reset verb selection
+    resetVerbSelection() {
+        document.querySelectorAll('.verb-btn').forEach(btn => {
+            btn.classList.remove('selected-verb');
+        });
+        this.selectedVerb = null;
+    }
+    
+    // Set up event listeners for the UI
+    setupEventListeners() {
+        // Command input
+        this.commandInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const command = this.commandInput.value.trim();
+                if (command) {
+                    this.game.processCommand(command);
+                    this.commandInput.value = '';
+                    this.resetVerbSelection();
+                    this.updateGameDisplay();
+                }
+            }
+        });
+        
+        // Direction buttons
+        document.querySelectorAll('.direction-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const command = button.getAttribute('data-command');
+                this.game.processCommand(command);
+                this.resetVerbSelection();
+                this.updateGameDisplay();
+            });
+        });
+        
+        // Action buttons
+        document.querySelectorAll('.action-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const command = button.getAttribute('data-command');
+                this.game.processCommand(command);
+                this.resetVerbSelection();
+                this.updateGameDisplay();
+            });
+        });
+    }
+    
+    // Set up dynamic elements that were added to the display
+    setupDynamicElements() {
+        // Game loading button
+        const noLoadBtn = document.getElementById('no-load');
+        if (noLoadBtn) {
+            noLoadBtn.addEventListener('click', () => {
+                this.game.initializeGame();
+                this.updateGameDisplay();
+            });
+        }
+        
+        // Door selection in game over screen
+        document.querySelectorAll('[id^="door-"]').forEach(button => {
+            button.addEventListener('click', () => {
+                const door = button.id.split('-')[1];
+                this.game.chooseDoor(door);
+                this.updateGameDisplay();
+            });
+        });
+        
+        // Channel selection
+        const channelSelect = document.getElementById('channel-select');
+        if (channelSelect) {
+            channelSelect.addEventListener('change', () => {
+                if (channelSelect.value) {
+                    this.game.chooseChannel(channelSelect.value);
+                    this.updateGameDisplay();
+                }
+            });
+        }
+        
+        // Channel change buttons
+        const yesChannelBtn = document.getElementById('yes-channel');
+        if (yesChannelBtn) {
+            yesChannelBtn.addEventListener('click', () => {
+                this.game.tvPower('ON');
+                this.updateGameDisplay();
+            });
+        }
+        
+        const noChannelBtn = document.getElementById('no-channel');
+        if (noChannelBtn) {
+            noChannelBtn.addEventListener('click', () => {
+                // Just close the dialog
+                this.updateGameDisplay();
+            });
+        }
+        
+        // Slot machine buttons
+        const yesSlots = document.getElementById('yes-slots');
+        if (yesSlots) {
+            yesSlots.addEventListener('click', () => {
+                this.game.playSlotRound();
+                this.updateGameDisplay();
+            });
+        }
+        
+        const noSlots = document.getElementById('no-slots');
+        if (noSlots) {
+            noSlots.addEventListener('click', () => {
+                // Just close the prompt
+                this.updateGameDisplay();
+            });
+        }
+    }
+}
+
+// Initialize the game when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    const gameUI = new GameUI();
+});
