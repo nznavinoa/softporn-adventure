@@ -7,6 +7,8 @@ import { GameEvents } from './GameEvents.js';
 
 export default class CommandParser {
     constructor() {
+        console.log("CommandParser constructor called");
+        
         // Define command shortcuts and synonyms
         this.commandShortcuts = {
             "N": "NORTH",
@@ -34,15 +36,24 @@ export default class CommandParser {
         
         // Set up event subscriptions
         this.setupEventListeners();
+        
+        console.log("CommandParser initialized");
     }
     
     setupEventListeners() {
-        eventBus.subscribe(GameEvents.COMMAND_RECEIVED, (command) => this.parseCommand(command));
+        console.log("Setting up CommandParser event listeners");
+        
+        eventBus.subscribe(GameEvents.COMMAND_RECEIVED, (command) => {
+            console.log("CommandParser received COMMAND_RECEIVED event:", command);
+            this.parseCommand(command);
+        });
     }
     
     // Parse a command string
     parseCommand(commandString) {
         try {
+            console.log("Parsing command:", commandString);
+            
             // Trim and convert to uppercase
             const command = commandString.trim().toUpperCase();
             
@@ -86,6 +97,7 @@ export default class CommandParser {
             
             // Check for special commands (no noun)
             if (this.specialCommands.includes(command)) {
+                console.log(`Special command detected: ${command}`);
                 eventBus.publish(GameEvents.COMMAND_PROCESSED, { verb: command, noun: null });
                 return;
             }
@@ -93,6 +105,7 @@ export default class CommandParser {
             // Check for command shortcuts
             if (this.commandShortcuts[command]) {
                 const expandedCommand = this.commandShortcuts[command];
+                console.log(`Command shortcut expanded: ${command} to ${expandedCommand}`);
                 eventBus.publish(GameEvents.COMMAND_PROCESSED, { verb: expandedCommand, noun: null });
                 return;
             }
@@ -106,6 +119,7 @@ export default class CommandParser {
             const expandedVerb = this.commandShortcuts[verb] || verb;
             
             // Publish the processed command
+            console.log(`Publishing command: ${expandedVerb} ${noun || '[no noun]'}`);
             eventBus.publish(GameEvents.COMMAND_PROCESSED, { verb: expandedVerb, noun: noun });
             
         } catch (error) {

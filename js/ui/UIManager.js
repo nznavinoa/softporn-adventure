@@ -22,6 +22,7 @@ export default class UIManager {
     // DOM elements
     this.gameDisplay = null;
     this.loadingSpinner = null;
+    this.directionButtons = null; // Add this property to store the buttons container
     
     // Game display content
     this.gameOutput = [];
@@ -29,9 +30,6 @@ export default class UIManager {
     // UI state
     this.isLoading = false;
     this.showingDialog = false;
-    
-    // Add initialization tracking
-    this.isInitialized = false;
     
     // Subscribe to events
     this.subscribeToEvents();
@@ -45,44 +43,43 @@ export default class UIManager {
   setupUI() {
     console.log("UIManager.setupUI() called");
     
-    // Wait for DOM to be ready
-    if (!document.body) {
-      console.error("Document body not ready");
-      return;
-    }
-
-    // Get or create main container
-    let container = document.querySelector('.container');
-    if (!container) {
-      container = document.createElement('div');
-      container.className = 'container';
-      document.body.appendChild(container);
-    }
-
-    // Get or create game display
     this.gameDisplay = document.getElementById('game-display');
-    if (!this.gameDisplay) {
-      this.gameDisplay = document.createElement('div');
-      this.gameDisplay.id = 'game-display';
-      container.appendChild(this.gameDisplay);
+    if(!this.gameDisplay) {
+      console.error("Game display element not found in the DOM");
+    } else {
+      console.log("Game display element found");
     }
-
+    
+    // Find the buttons container
+    this.directionButtons = document.querySelector('.buttons');
+    if(!this.directionButtons) {
+      console.error("Direction buttons container not found in the DOM");
+    } else {
+      console.log("Direction buttons container found");
+      // Set up direction and action buttons
+      this.setupDirectionButtons();
+    }
+    
     // Create loading spinner
-    if (!this.loadingSpinner) {
-      this.loadingSpinner = document.createElement('div');
-      this.loadingSpinner.className = 'loading-spinner';
-      this.loadingSpinner.style.display = 'none';
+    this.loadingSpinner = document.createElement('div');
+    this.loadingSpinner.className = 'loading-spinner';
+    this.loadingSpinner.style.display = 'none';
+    
+    const container = document.querySelector('.container');
+    if (container) {
       container.appendChild(this.loadingSpinner);
+    } else {
+      console.error("Container element not found in the DOM");
     }
-
+    
     // Initialize tooltip container
     this.setupTooltips();
     
-    // Set up command input if it exists
+    // If command input exists, set it up
     if (this.commandInput) {
       this.commandInput.setupUI();
     }
-
+    
     console.log("UIManager setup complete");
   }
   
@@ -92,58 +89,34 @@ export default class UIManager {
   subscribeToEvents() {
     console.log("Setting up UIManager event listeners");
     
-    // Game initialization events
-    this.eventBus.subscribe(GameEvents.GAME_STARTED, (data) => {
-      if (!this.isInitialized) {
-        console.log("UIManager received GAME_STARTED event");
-        this.setupUI();
-        this.isInitialized = true;
-      }
+    this.eventBus.subscribe(GameEvents.GAME_INITIALIZED, () => {
+      console.log("UIManager received GAME_INITIALIZED event");
+      this.setupUI();
     });
     
-    // UI refresh events
-    this.eventBus.subscribe(GameEvents.UI_REFRESH, (data) => {
-      if (this.isInitialized) {
-        console.log("UIManager received UI_REFRESH event:", data);
-        this.refreshUI(data.type);
-      }
-    });
-    
-    // Room change events
-    this.eventBus.subscribe(GameEvents.ROOM_CHANGED, (data) => {
-      if (this.isInitialized) {
-        console.log("UIManager received ROOM_CHANGED event");
-        this.updateDirectionButtons();
-      }
-    });
-    
-    // Display text events
     this.eventBus.subscribe(GameEvents.DISPLAY_TEXT, (data) => {
-      if (this.isInitialized) {
-        console.log("UIManager received DISPLAY_TEXT event");
-        this.addToGameDisplay(data.text, data.className || "");
-      }
+      console.log("UIManager received DISPLAY_TEXT event");
+      this.addToGameDisplay(data.text, data.className || "");
     });
     
-    // Dialog events
+    this.eventBus.subscribe(GameEvents.UI_REFRESH, (data) => {
+      console.log("UIManager received UI_REFRESH event:", data);
+      this.refreshUI(data.type);
+    });
+    
     this.eventBus.subscribe(GameEvents.UI_SHOW_DIALOG, (data) => {
-      if (this.isInitialized) {
-        console.log("UIManager received UI_SHOW_DIALOG event");
-        this.showDialog(data.title, data.content, data.buttons);
-      }
+      console.log("UIManager received UI_SHOW_DIALOG event");
+      this.showDialog(data.title, data.content, data.buttons);
     });
     
     this.eventBus.subscribe(GameEvents.UI_HIDE_DIALOG, () => {
-      if (this.isInitialized) {
-        console.log("UIManager received UI_HIDE_DIALOG event");
-        this.hideDialog();
-      }
+      console.log("UIManager received UI_HIDE_DIALOG event");
+      this.hideDialog();
     });
     
-    // Display update events
     this.eventBus.subscribe(GameEvents.DISPLAY_UPDATED, (data) => {
-      if (this.isInitialized && data.newContent) {
-        console.log("UIManager received DISPLAY_UPDATED event");
+      console.log("UIManager received DISPLAY_UPDATED event");
+      if (data.newContent) {
         this.updateGameDisplay();
       }
     });
@@ -171,92 +144,37 @@ export default class UIManager {
   }
   
   /**
-   * Update the game display with all content and enhanced error handling
+   * Update the game display with all content
    */
   updateGameDisplay() {
     console.log("UIManager.updateGameDisplay() called");
-    console.log("Total game output items:", this.gameOutput.length);
     
     if (!this.gameDisplay) {
-        console.error("Game display element not available");
-        this.gameDisplay = document.getElementById('game-display');
-        if (!this.gameDisplay) {
-            console.error("Game display element still not found");
-            return;
-        }
+      console.error("Game display element not available");
+      this.gameDisplay = document.getElementById('game-display');
+      if (!this.gameDisplay) {
+        console.error("Game display element still not found");
+        return;
+      }
     }
     
-    try {
-        // Clear previous content
-        this.gameDisplay.innerHTML = "";
-        
-        // Add all output with enhanced error handling
-        this.gameOutput.forEach((output, index) => {
-            try {
-                // Ensure output is an object with content
-                const content = output.content || output;
-                const className = output.className || '';
-                
-                const div = document.createElement("div");
-                
-                // Handle different content types
-                if (typeof content === 'string') {
-                    div.innerHTML = content;
-                } else {
-                    console.warn(`Unexpected content type at index ${index}:`, content);
-                    div.textContent = JSON.stringify(content);
-                }
-                
-                // Apply class if provided
-                if (className) {
-                    div.className = className;
-                }
-                
-                // Add debugging attributes
-                div.dataset.index = index;
-                
-                this.gameDisplay.appendChild(div);
-            } catch (error) {
-                console.error(`Error rendering output item at index ${index}:`, error);
-                
-                // Fallback error display
-                const errorDiv = document.createElement("div");
-                errorDiv.className = 'error-message';
-                errorDiv.textContent = `Rendering error: ${error.message}`;
-                this.gameDisplay.appendChild(errorDiv);
-            }
-        });
-        
-        // Scroll to bottom using requestAnimationFrame for smooth scrolling
-        requestAnimationFrame(() => {
-            this.gameDisplay.scrollTop = this.gameDisplay.scrollHeight;
-        });
-        
-        console.log("Game display update complete");
-    } catch (error) {
-        console.error("Critical error updating game display:", error);
-        this.showFallbackError(error);
-    }
-  }
-
-  /**
-   * Display fallback error message when critical error occurs
-   * @param {Error} error - The error that occurred
-   */
-  showFallbackError(error) {
-    try {
-        const errorContainer = document.createElement('div');
-        errorContainer.className = 'critical-error';
-        errorContainer.innerHTML = `
-            <h3>Display Error</h3>
-            <p>There was a problem updating the display.</p>
-            <p class="error-details">${error.message}</p>
-        `;
-        document.body.appendChild(errorContainer);
-    } catch (e) {
-        // Last resort error handling
-        alert('Critical display error: ' + error.message);
-    }
+    // Clear previous content
+    this.gameDisplay.innerHTML = "";
+    
+    // Add all output
+    this.gameOutput.forEach(output => {
+      const div = document.createElement("div");
+      div.innerHTML = output.content;
+      if (output.className) {
+        div.className = output.className;
+      }
+      this.gameDisplay.appendChild(div);
+    });
+    
+    // Scroll to bottom
+    this.gameDisplay.scrollTop = this.gameDisplay.scrollHeight;
+    
+    console.log("Game display updated");
   }
   
   /**
@@ -284,13 +202,57 @@ export default class UIManager {
   }
   
   /**
+   * Set up direction buttons
+   */
+  setupDirectionButtons() {
+    console.log("Setting up direction buttons");
+    
+    if (!this.directionButtons) {
+      console.error("Direction buttons container not found");
+      // Try to find it one more time
+      this.directionButtons = document.querySelector('.buttons');
+      if (!this.directionButtons) {
+        console.error("Still cannot find direction buttons container");
+        return;
+      }
+    }
+    
+    const buttons = this.directionButtons.querySelectorAll('button');
+    console.log(`Found ${buttons.length} direction/action buttons`);
+    
+    buttons.forEach(button => {
+      // Remove any existing event listeners to avoid duplicates
+      const newButton = button.cloneNode(true);
+      button.parentNode.replaceChild(newButton, button);
+      
+      newButton.addEventListener('click', () => {
+        const command = newButton.dataset.command;
+        
+        if (command) {
+          console.log("Direction/action button clicked:", command);
+          
+          // Display the command
+          this.eventBus.publish(GameEvents.DISPLAY_TEXT, {
+            text: `> ${command}`,
+            className: 'command'
+          });
+          
+          // Process the command
+          this.eventBus.publish(GameEvents.COMMAND_RECEIVED, command);
+        }
+      });
+    });
+    
+    console.log("Direction buttons event listeners set up");
+  }
+  
+  /**
    * Update direction buttons based on available exits
    */
   updateDirectionButtons() {
     console.log("UIManager.updateDirectionButtons() called");
     
     try {
-      // Retrieve available directions from the current room
       const directions = this.eventBus.publish(GameEvents.GET_AVAILABLE_DIRECTIONS, {});
       
       if (!directions || !Array.isArray(directions)) {
@@ -298,39 +260,19 @@ export default class UIManager {
         return;
       }
       
-      // Normalize directions to match button data-command attributes
-      const normalizedDirections = directions.map(dir => {
-        switch(dir.toUpperCase()) {
-          case 'NORTH': return 'N';
-          case 'SOUTH': return 'S';
-          case 'EAST': return 'E';
-          case 'WEST': return 'W';
-          case 'UP': return 'U';
-          case 'DOWN': return 'D';
-          default: return dir;
-        }
-      });
-
-      // Get all direction buttons
-      const directionButtons = document.querySelectorAll('.direction-btn');
-      
-      directionButtons.forEach(btn => {
-        const buttonDirection = btn.dataset.command;
-        
-        if (normalizedDirections.includes(buttonDirection)) {
-          // Show and enable button if direction is available
+      // Show/hide direction buttons
+      document.querySelectorAll('.direction-btn').forEach(btn => {
+        const dir = btn.dataset.command;
+        if (directions.includes(dir)) {
           btn.style.display = 'inline-block';
-          btn.disabled = false;
+          
+          // Add subtle highlight effect for available directions
           btn.classList.add('available-direction');
         } else {
-          // Hide and disable button if direction is not available
           btn.style.display = 'none';
-          btn.disabled = true;
           btn.classList.remove('available-direction');
         }
       });
-
-      console.log("Available directions:", normalizedDirections);
     } catch (error) {
       console.error("Error updating direction buttons:", error);
     }
@@ -489,24 +431,5 @@ export default class UIManager {
     }
     
     this.addToGameDisplay(message, className);
-  }
-
-  /**
-   * Validate required DOM elements
-   */
-  validateDOMElements() {
-    const elements = {
-      gameDisplay: this.gameDisplay,
-      container: document.querySelector('.container'),
-      loadingSpinner: this.loadingSpinner
-    };
-
-    for (const [name, element] of Object.entries(elements)) {
-      if (!element) {
-        console.error(`Required DOM element '${name}' is missing`);
-        return false;
-      }
-    }
-    return true;
   }
 }

@@ -82,12 +82,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (game) {
           console.log("Starting game...");
-          // Publish a single, controlled game start event
-          eventBus.publish(GameEvents.GAME_STARTED, {
-            suppressMultipleEvents: true
-          });
+          
+          // FIX: Add error handling and timeout protection
+          try {
+            // Start the game
+            game.start();
+          } catch (error) {
+            console.error("Error during game start:", error);
+            // Display error to user
+            showFatalError("Game failed to start properly. Please refresh the page and try again.");
+          }
         } else {
           console.error("Game instance not initialized");
+          showFatalError("Game engine not initialized. Please refresh the page.");
         }
       });
       console.log("Start Game button event listener added");
@@ -109,18 +116,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
   } catch (error) {
     console.error('Error initializing game:', error);
-    
-    // Display error message to user
-    const errorMessage = document.createElement('div');
-    errorMessage.className = 'error-message';
-    errorMessage.innerHTML = `
-      <h2>Error Loading Game</h2>
-      <p>There was a problem initializing the game. Please refresh and try again.</p>
-      <p>Technical details: ${error.message}</p>
-    `;
-    document.body.appendChild(errorMessage);
+    showFatalError(`There was a problem initializing the game. Please refresh and try again. (${error.message})`);
   }
 });
+
+// Display fatal error to user
+function showFatalError(message) {
+  const errorMessage = document.createElement('div');
+  errorMessage.className = 'error-message';
+  errorMessage.innerHTML = `
+    <h2>Error Loading Game</h2>
+    <p>${message}</p>
+  `;
+  document.body.appendChild(errorMessage);
+}
 
 // Initialize all game components
 function initializeComponents() {

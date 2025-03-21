@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Softporn Adventure - Button Tests</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        #test-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border: 1px solid #ff71ce;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 300px;
+            z-index: 1000;
+            font-family: monospace;
+        }
+        
+        #test-panel h2 {
+            color: #ff71ce;
+            margin-top: 0;
+        }
+        
+        #test-panel button {
+            background-color: #01cdfe;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        
+        .pass {
+            color: #05ffa1;
+        }
+        
+        .fail {
+            color: #ff71ce;
+        }
+        
+        #test-log {
+            border-top: 1px solid #01cdfe;
+            margin-top: 10px;
+            padding-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .test-log-entry {
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    <div class="scanline"></div>
+    
+    <div class="container">
+        <header>
+            <h1>SOFTPORN ADVENTURE</h1>
+            <p class="subtitle">BUTTON TESTS</p>
+        </header>
+        
+        <div class="game-container">
+            <main>
+                <div id="game-display"></div>
+                
+                <div id="input-area">
+                    <div class="buttons">
+                        <button class="direction-btn" data-command="N">NORTH</button>
+                        <button class="direction-btn" data-command="S">SOUTH</button>
+                        <button class="direction-btn" data-command="E">EAST</button>
+                        <button class="direction-btn" data-command="W">WEST</button>
+                        <button class="direction-btn" data-command="U">UP</button>
+                        <button class="direction-btn" data-command="D">DOWN</button>
+                        <button class="action-btn" data-command="LOOK">LOOK</button>
+                        <button class="action-btn" data-command="INVENTORY">INV</button>
+                    </div>
+                    
+                    <div class="command-buttons">
+                        <div class="verb-buttons">
+                            <button class="verb-btn" data-verb="TAKE">TAKE</button>
+                            <button class="verb-btn" data-verb="DROP">DROP</button>
+                            <button class="verb-btn" data-verb="USE">USE</button>
+                            <button class="verb-btn" data-verb="OPEN">OPEN</button>
+                            <button class="verb-btn" data-verb="BUY">BUY</button>
+                            <button class="verb-btn" data-verb="EXAMINE">EXAMINE</button>
+                        </div>
+                        <div id="context-buttons" class="noun-buttons">
+                            <!-- Dynamic noun buttons will appear here based on room content -->
+                        </div>
+                    </div>
+                    
+                    <div class="command-prompt">
+                        <span class="prompt-label">></span>
+                        <input type="text" id="command-input" placeholder="What shall I do?" autocomplete="off">
+                    </div>
+                </div>
+            </main>
+            
+            <aside id="location-frame">
+                <div class="location-image-container">
+                    <div class="location-image" id="location-image">
+                        <!-- Location image will be displayed here -->
+                    </div>
+                    <div class="location-name" id="location-name">
+                        <!-- Location name will be displayed here -->
+                    </div>
+                </div>
+            </aside>
+        </div>
+        
+        <div id="test-panel">
+            <h2>Button Tests</h2>
+            <div id="button-test-results">Running tests...</div>
+            <button id="run-tests">Run Tests Manually</button>
+            <div id="test-log"></div>
+        </div>
+    </div>
+    
+    <!-- Create a minimal game environment for testing -->
+    <script>
+        // Minimal event bus for testing
+        window.eventBus = {
+            subscribers: {},
+            subscribe: function(event, callback) {
+                if (!this.subscribers[event]) {
+                    this.subscribers[event] = [];
+                }
+                this.subscribers[event].push(callback);
+                logTest(`Subscribed to ${event}`);
+                return () => this.unsubscribe(event, callback);
+            },
+            publish: function(event, data) {
+                logTest(`Event published: ${event}`);
+                if (!this.subscribers[event]) return;
+                
+                this.subscribers[event].forEach(callback => {
+                    try {
+                        callback(data);
+                    } catch (error) {
+                        console.error(`Error in subscriber for event ${event}:`, error);
+                    }
+                });
+            },
+            unsubscribe: function(event, callback) {
+                if (!this.subscribers[event]) return;
+                this.subscribers[event] = this.subscribers[event]
+                    .filter(subscriber => subscriber !== callback);
+            }
+        };
+        
+        // Mock objects to simulate the game environment
+        const GameEvents = {
+            COMMAND_RECEIVED: 'command:received',
+            COMMAND_PROCESSED: 'command:processed',
+            DISPLAY_TEXT: 'display:text',
+            DISPLAY_UPDATED: 'display:updated',
+            UI_REFRESH: 'ui:refresh'
+        };
+        
+        // Utility functions
+        function addToGameDisplay(text) {
+            const gameDisplay = document.getElementById('game-display');
+            if (gameDisplay) {
+                const div = document.createElement('div');
+                div.className = 'message';
+                div.innerHTML = text;
+                gameDisplay.appendChild(div);
+            }
+        }
+        
+        function logTest(message) {
+            const logElement = document.getElementById('test-log');
+            if (logElement) {
+                const entry = document.createElement('div');
+                entry.className = 'test-log-entry';
+                entry.textContent = message;
+                logElement.appendChild(entry);
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+            console.log(message);
+        }
+        
+        // Set up minimal command handling
+        eventBus.subscribe(GameEvents.COMMAND_RECEIVED, (command) => {
+            logTest(`Command received: ${command}`);
+            
+            // Handle the LOOK command specifically for testing
+            if (command === 'LOOK') {
+                eventBus.publish(GameEvents.COMMAND_PROCESSED, { verb: 'LOOK', noun: null });
+            }
+        });
+        
+        eventBus.subscribe(GameEvents.COMMAND_PROCESSED, (data) => {
+            logTest(`Command processed: ${data.verb} ${data.noun || ''}`);
+            
+            // Handle the LOOK command
+            if (data.verb === 'LOOK') {
+                addToGameDisplay('YOU ARE IN A TEST ROOM.');
+                addToGameDisplay('EXITS ARE: NORTH, SOUTH, EAST, WEST');
+                addToGameDisplay('YOU SEE: A TEST OBJECT');
+            }
+        });
+        
+        // Set up button clicks
+        document.addEventListener('DOMContentLoaded', function() {
+            logTest('Document loaded, setting up button handlers');
+            
+            // Set up direction and action buttons
+            const buttons = document.querySelectorAll('.direction-btn, .action-btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const command = button.dataset.command;
+                    if (command) {
+                        logTest(`Button clicked: ${command}`);
+                        eventBus.publish(GameEvents.COMMAND_RECEIVED, command);
+                    }
+                });
+            });
+            
+            // Run tests button
+            const runTestsButton = document.getElementById('run-tests');
+            if (runTestsButton) {
+                runTestsButton.addEventListener('click', () => {
+                    logTest('Running manual tests');
+                    import('./js/tests/buttonTest.js')
+                        .then(module => {
+                            module.runButtonTests();
+                        })
+                        .catch(error => {
+                            logTest(`Error loading test module: ${error.message}`);
+                        });
+                });
+            }
+        });
+    </script>
+    
+    <!-- Load the button test script -->
+    <script type="module" src="js/tests/buttonTest.js"></script>
+    
+    <!-- Debug Info - will be hidden in production -->
+    <div id="debug-info" style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px; font-family: monospace; color: white; font-size: 12px; z-index: 1000; max-width: 300px; max-height: 200px; overflow: auto;"></div>
+    
+    <!-- Debugging script to show errors -->
+    <script>
+        // Capture and display errors for debugging
+        window.addEventListener('error', function(event) {
+            const debugInfo = document.getElementById('debug-info');
+            if (debugInfo) {
+                const errorMsg = document.createElement('div');
+                errorMsg.textContent = `ERROR: ${event.message} at line ${event.lineno}`;
+                errorMsg.style.color = 'red';
+                debugInfo.appendChild(errorMsg);
+                
+                // Scroll to bottom
+                debugInfo.scrollTop = debugInfo.scrollHeight;
+            }
+            console.error(event);
+        });
+        
+        // Add a simple debug logger
+        window.debugLog = function(message) {
+            const debugInfo = document.getElementById('debug-info');
+            if (debugInfo) {
+                const logMsg = document.createElement('div');
+                logMsg.textContent = message;
+                debugInfo.appendChild(logMsg);
+                
+                // Scroll to bottom
+                debugInfo.scrollTop = debugInfo.scrollHeight;
+            }
+            console.log(message);
+        };
+    </script>
+</body>
+</html>

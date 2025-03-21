@@ -18,6 +18,9 @@ export default class Game {
         this.currentRoom = 3; // Start in the bar
         this.gameOver = false;
         
+        // State flag to prevent event recursion
+        this.gameStarted = false;
+        
         // Game state flags
         this.flags = {
             drawerExamined: 0,
@@ -77,9 +80,6 @@ export default class Game {
         // Game output history
         this.gameOutput = [];
         
-        // Add gameStarted flag
-        this.gameStarted = false;
-        
         // Set up event subscriptions
         this.setupEventListeners();
         
@@ -89,9 +89,17 @@ export default class Game {
     setupEventListeners() {
         console.log("Setting up Game event listeners");
         
+        // FIX: Prevent infinite recursion by checking gameStarted flag
         eventBus.subscribe(GameEvents.GAME_STARTED, () => {
             console.log("Game received GAME_STARTED event");
-            this.start();
+            
+            // Prevent infinite recursion by checking if game is already started
+            if (this.gameStarted) {
+                console.log("Game already started, ignoring duplicate event");
+                return;
+            }
+            
+            // Additional game initialization steps can go here if needed
         });
         
         eventBus.subscribe(GameEvents.COMMAND_PROCESSED, (data) => {
@@ -101,15 +109,16 @@ export default class Game {
     }
     
     // Start the game
-    start(options = {}) {
+    start() {
         console.log("Game.start() method called");
         
         try {
-            // Prevent multiple initializations
+            // FIX: Set the flag to prevent infinite recursion
             if (this.gameStarted) {
-                console.log("Game already started, ignoring start call");
-                return false;
+                console.log("Game already started, ignoring duplicate call");
+                return true;
             }
+            
             this.gameStarted = true;
             
             // Display intro text
@@ -120,13 +129,11 @@ export default class Game {
             // Ask if a saved game should be loaded
             this.addToGameDisplay(`<div class="system-message">SHOULD A SAVED GAME BE LOADED? <button id="no-load">N</button></div>`);
             
-            // Only publish initialization events once
-            if (!options.suppressMultipleEvents) {
-                console.log("Publishing GAME_STARTED event");
-                eventBus.publish(GameEvents.GAME_STARTED, {
-                    timestamp: new Date().toISOString()
-                });
-            }
+            // Directly publish game started event
+            console.log("Publishing GAME_STARTED event");
+            eventBus.publish(GameEvents.GAME_STARTED, {
+                timestamp: new Date().toISOString()
+            });
             
             // Publish UI refresh event
             eventBus.publish(GameEvents.UI_REFRESH, {
@@ -174,49 +181,20 @@ export default class Game {
         }
     }
     
-    /**
-     * Add content to the game display with enhanced validation and logging
-     * @param {string} content - HTML content to add
-     * @param {string} className - Optional CSS class name
-     */
+    // Add content to the game display
     addToGameDisplay(content, className = "") {
         try {
-            console.log("Adding to game display - RAW CONTENT:", content);
+            console.log("Adding to game display:", content.substring(0, 50) + "...");
             
-            // Validate content
-            if (!content || typeof content !== 'string') {
-                console.error("Invalid content passed to addToGameDisplay:", content);
-                return;
-            }
+            this.gameOutput.push({ content, className });
             
-            // Trim and validate HTML tags
-            const trimmedContent = content.trim();
-            if (!trimmedContent.startsWith('<') || !trimmedContent.endsWith('>')) {
-                console.warn("Content may not be valid HTML:", trimmedContent);
-            }
-            
-            // Create a full log entry
-            const logEntry = { 
-                content: trimmedContent, 
-                className, 
-                timestamp: new Date().toISOString() 
-            };
-            
-            // Add to game output
-            this.gameOutput.push(logEntry);
-            
-            // Publish display update event with detailed logging
+            // Notify UI to update
             eventBus.publish(GameEvents.DISPLAY_UPDATED, {
-                newContent: logEntry,
-                gameOutput: this.gameOutput,
-                sourceMethod: (new Error()).stack.split('\n')[2].trim()
+                newContent: { content, className },
+                gameOutput: this.gameOutput
             });
-            
-            // Additional debugging for UI
-            console.log("Game Output Length:", this.gameOutput.length);
-            console.log("Last Added Content:", JSON.stringify(logEntry));
         } catch (error) {
-            console.error("Critical error in addToGameDisplay:", error);
+            console.error("Error adding to game display:", error);
         }
     }
     
