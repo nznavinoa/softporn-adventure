@@ -6,10 +6,12 @@ import eventBus from '../main.js';
 import { GameEvents } from './GameEvents.js';
 import { roomDescriptions, roomExits, initialRoomObjects } from '../data/rooms.js';
 import { objectNames, objectTypes } from '../data/objects.js';
-import { specialTexts } from '../data/text.js';
+import { specialTexts, introText } from '../data/text.js';
 
 export default class Game {
     constructor() {
+        console.log("Game constructor called");
+        
         // Core game variables
         this.score = 0;
         this.money = 25; // $2500 in the original notation (hundreds)
@@ -77,42 +79,62 @@ export default class Game {
         
         // Set up event subscriptions
         this.setupEventListeners();
+        
+        console.log("Game instance initialized");
     }
     
     setupEventListeners() {
-        eventBus.subscribe(GameEvents.GAME_STARTED, () => this.start());
-        eventBus.subscribe(GameEvents.COMMAND_PROCESSED, (data) => this.processCommand(data));
+        console.log("Setting up Game event listeners");
+        
+        eventBus.subscribe(GameEvents.GAME_STARTED, () => {
+            console.log("Game received GAME_STARTED event");
+            this.start();
+        });
+        
+        eventBus.subscribe(GameEvents.COMMAND_PROCESSED, (data) => {
+            console.log("Game received COMMAND_PROCESSED event:", data);
+            this.processCommand(data);
+        });
     }
     
     // Start the game
     start() {
+        console.log("Game.start() method called");
+        
         try {
             // Display intro text
             this.addToGameDisplay(`<div class="message">
-                SOFTPORN ADVENTURE
-                WRITTEN BY CHUCK BENTON
-                COPYRIGHT 1981
-                BLUE SKY SOFTWARE
-                
-                80s NEON WEB EDITION
+                ${introText}
             </div>`);
             
-            // Ask if a saved game should be loaded (for authenticity, though not implemented yet)
+            // Ask if a saved game should be loaded
             this.addToGameDisplay(`<div class="system-message">SHOULD A SAVED GAME BE LOADED? <button id="no-load">N</button></div>`);
             
-            // Publish an event to notify UI that the game has started
+            // Directly publish game started event
+            console.log("Publishing GAME_STARTED event");
+            eventBus.publish(GameEvents.GAME_STARTED, {
+                timestamp: new Date().toISOString()
+            });
+            
+            // Publish UI refresh event
             eventBus.publish(GameEvents.UI_REFRESH, {
                 type: 'gameStarted',
                 gameOutput: this.gameOutput
             });
+            
+            console.log("Game started successfully");
+            return true;
         } catch (error) {
             console.error("Error starting game:", error);
             this.addToGameDisplay(`<div class="message">ERROR STARTING GAME. PLEASE REFRESH.</div>`);
+            return false;
         }
     }
     
     // Initialize game after intro
     initializeGame() {
+        console.log("Game.initializeGame() method called");
+        
         try {
             this.addToGameDisplay(`<div class="message">
                 PLEASE WAIT
@@ -131,6 +153,8 @@ export default class Game {
                     roomObjects: this.getRoomObjects(),
                     inventory: this.inventory
                 });
+                
+                console.log("Game initialized successfully");
             }, 1000);
         } catch (error) {
             console.error("Error initializing game:", error);
@@ -141,6 +165,8 @@ export default class Game {
     // Add content to the game display
     addToGameDisplay(content, className = "") {
         try {
+            console.log("Adding to game display:", content.substring(0, 50) + "...");
+            
             this.gameOutput.push({ content, className });
             
             // Notify UI to update
@@ -206,6 +232,8 @@ export default class Game {
     // Display current room
     displayRoom() {
         try {
+            console.log("Displaying room:", this.currentRoom);
+            
             // Clear previous display
             this.gameOutput = [];
             
@@ -214,7 +242,8 @@ export default class Game {
             this.addToGameDisplay(`<div class="room-title">${roomName}</div>`);
             
             // Get room description
-            const exitType = roomExits[this.currentRoom]?.[0] || "";
+            const exitInfo = roomExits[this.currentRoom] || [this.currentRoom, []];
+            const exitType = exitInfo[0] || "";
             
             // Display available exits
             this.addToGameDisplay(`<div class="directions">OTHER AREAS ARE: ${exitType}</div>`);
@@ -244,10 +273,12 @@ export default class Game {
         }
     }
     
-    // Process a command (stub for now, will be expanded)
+    // Process a command
     processCommand(commandData) {
         try {
             const { verb, noun } = commandData;
+            
+            console.log("Processing command:", verb, noun || '');
             
             // Echo the command to the display
             this.addToGameDisplay(`<div class="message">> ${verb} ${noun || ''}</div>`);

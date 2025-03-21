@@ -52,18 +52,6 @@ export const GameEvents = {
     CHARACTER_INTERACTION: 'character:interaction',
     CHARACTER_STATE_CHANGED: 'character:state-changed',
     
-    // Phone events
-    PHONE_DIALOG_STARTED: 'phone:dialog-started',
-    PHONE_DIALOG_UPDATED: 'phone:dialog-updated',
-    PHONE_DIALOG_COMPLETED: 'phone:dialog-completed',
-    PHONE_CALL_COMPLETED: 'phone:call-completed',
-    PHONE_RINGING: 'phone:ringing',
-    
-    // Quest events
-    QUEST_STARTED: 'quest:started',
-    QUEST_UPDATED: 'quest:updated',
-    QUEST_COMPLETED: 'quest:completed',
-    
     // Display events
     DISPLAY_TEXT: 'display:text',
     DISPLAY_ROOM: 'display:room',
@@ -77,11 +65,6 @@ export const GameEvents = {
     UI_HIDE_DIALOG: 'ui:hide-dialog',
     UI_UPDATE_BUTTONS: 'ui:update-buttons',
     
-    // Image events
-    IMAGE_LOADED: 'image:loaded',
-    IMAGE_ERROR: 'image:error',
-    IMAGE_LOADING_COMPLETE: 'image:loading-complete',
-    
     // Mini-game events
     MINIGAME_STARTED: 'minigame:started',
     MINIGAME_ENDED: 'minigame:ended',
@@ -93,21 +76,6 @@ export const GameEvents = {
     GAME_SAVE_REQUESTED: 'save:requested',
     GAME_LOAD_REQUESTED: 'load:requested',
     SAVE_ERROR: 'save:error',
-    LOAD_ERROR: 'load:error',
-    SAVE_SLOTS_UPDATED: 'save:slots-updated',
-    
-    // Animation events
-    ANIMATION_STARTED: 'animation:started',
-    ANIMATION_ENDED: 'animation:ended',
-    
-    // Audio events
-    SOUND_PLAY: 'sound:play',
-    SOUND_STOP: 'sound:stop',
-    MUSIC_PLAY: 'music:play',
-    MUSIC_STOP: 'music:stop',
-    
-    // Analytics events
-    ANALYTICS_EVENT: 'analytics:event',
-    ANALYTICS_SCREEN_VIEW: 'analytics:screen-view',
-    ANALYTICS_ERROR: 'analytics:error'
+    LOAD_ERROR: 'save:load-error',
+    SAVE_SLOTS_UPDATED: 'save:slots-updated'
 };

@@ -12,6 +12,8 @@ export default class RoomDisplay {
    * @param {Object} objectData - Game object data
    */
   constructor(eventBus, imageLoader, roomData, objectData) {
+    console.log("RoomDisplay constructor called");
+    
     this.eventBus = eventBus;
     this.imageLoader = imageLoader;
     this.roomData = roomData;
@@ -20,7 +22,6 @@ export default class RoomDisplay {
     // DOM elements (to be initialized when setupUI is called)
     this.locationImage = null;
     this.locationName = null;
-    this.gameDisplay = null;
     
     // Current room state
     this.currentRoom = null;
@@ -29,32 +30,55 @@ export default class RoomDisplay {
     
     // Subscribe to events
     this.subscribeToEvents();
+    
+    console.log("RoomDisplay initialized");
   }
   
   /**
    * Initialize UI elements
    */
   setupUI() {
+    console.log("RoomDisplay.setupUI() called");
+    
     this.locationImage = document.getElementById('location-image');
+    if (!this.locationImage) {
+      console.error("Location image element not found in the DOM");
+    } else {
+      console.log("Location image element found");
+    }
+    
     this.locationName = document.getElementById('location-name');
-    this.gameDisplay = document.getElementById('game-display');
+    if (!this.locationName) {
+      console.error("Location name element not found in the DOM");
+    } else {
+      console.log("Location name element found");
+    }
+    
+    console.log("RoomDisplay setup complete");
   }
   
   /**
    * Subscribe to relevant events
    */
   subscribeToEvents() {
+    console.log("Setting up RoomDisplay event listeners");
+    
     this.eventBus.subscribe(GameEvents.ROOM_CHANGED, (data) => {
+      console.log("RoomDisplay received ROOM_CHANGED event:", data);
       this.handleRoomChange(data.previousRoom, data.currentRoom, data.direction);
     });
     
     this.eventBus.subscribe(GameEvents.ROOM_OBJECTS_CHANGED, (data) => {
+      console.log("RoomDisplay received ROOM_OBJECTS_CHANGED event");
       this.updateRoomObjects(data.roomId, data.objects);
     });
     
     this.eventBus.subscribe(GameEvents.GAME_INITIALIZED, () => {
+      console.log("RoomDisplay received GAME_INITIALIZED event");
       this.setupUI();
     });
+    
+    console.log("RoomDisplay event listeners set up");
   }
   
   /**
@@ -64,6 +88,8 @@ export default class RoomDisplay {
    * @param {string} direction - Direction of movement
    */
   handleRoomChange(previousRoom, currentRoom, direction) {
+    console.log("RoomDisplay.handleRoomChange() called");
+    
     this.previousRoom = previousRoom;
     this.currentRoom = currentRoom;
     
@@ -80,6 +106,8 @@ export default class RoomDisplay {
    * @param {number} roomId - Room ID to display
    */
   displayRoom(roomId) {
+    console.log("RoomDisplay.displayRoom() called for room:", roomId);
+    
     if (!this.locationImage || !this.locationName) {
       this.setupUI();
     }
@@ -90,13 +118,17 @@ export default class RoomDisplay {
     // Update location name
     if (this.locationName) {
       this.locationName.textContent = roomDesc;
+      console.log("Updated location name:", roomDesc);
     }
     
     // Apply room image
-    if (this.locationImage) {
+    if (this.locationImage && this.imageLoader) {
       // Use room ID to determine image name (e.g., "hallway" for room 1)
       const roomImageName = this.getRoomImageName(roomId);
       this.imageLoader.applyImage(this.locationImage, 'locations', roomImageName);
+      console.log("Applied room image:", roomImageName);
+    } else {
+      console.error("Cannot update location image: missing DOM element or imageLoader");
     }
     
     // Notify that room display is complete
@@ -134,7 +166,13 @@ export default class RoomDisplay {
    * @param {string} direction - Direction of movement
    */
   transitionToRoom(direction) {
-    if (!this.locationImage) return;
+    console.log("RoomDisplay.transitionToRoom() called with direction:", direction);
+    
+    if (!this.locationImage) {
+      console.error("Cannot perform transition: location image element not available");
+      this.displayRoom(this.currentRoom);
+      return;
+    }
     
     this.transitionInProgress = true;
     
@@ -150,6 +188,7 @@ export default class RoomDisplay {
         this.locationImage.classList.remove('transition');
         this.locationImage.classList.remove(`transition-${direction.toLowerCase()}`);
         this.transitionInProgress = false;
+        console.log("Room transition completed");
       }, 300);
     }, 300);
   }
@@ -160,7 +199,12 @@ export default class RoomDisplay {
    * @param {Array} objects - Array of object IDs in the room
    */
   updateRoomObjects(roomId, objects) {
-    if (roomId !== this.currentRoom) return;
+    console.log("RoomDisplay.updateRoomObjects() called for room:", roomId);
+    
+    if (roomId !== this.currentRoom) {
+      console.log("Ignoring object update for different room");
+      return;
+    }
     
     // This function could add visual indicators for objects in the room
     // For example, adding icons or highlighted areas to the room image
@@ -171,40 +215,5 @@ export default class RoomDisplay {
       roomId: roomId,
       objects: objects
     });
-  }
-  
-  /**
-   * Add a character to the room visualization
-   * @param {number} charId - Character ID
-   */
-  addCharacterToRoom(charId) {
-    // This would add a character visualization to the room
-    // For a text adventure with simple graphics, this might be an overlay image
-    
-    // Example implementation:
-    if (!this.locationImage) return;
-    
-    const characterElement = document.createElement('div');
-    characterElement.classList.add('room-character');
-    characterElement.dataset.characterId = charId;
-    
-    // Apply character image
-    this.imageLoader.applyImage(characterElement, 'characters', `char_${charId}`);
-    
-    // Add to the location container
-    this.locationImage.appendChild(characterElement);
-  }
-  
-  /**
-   * Remove a character from the room visualization
-   * @param {number} charId - Character ID
-   */
-  removeCharacterFromRoom(charId) {
-    if (!this.locationImage) return;
-    
-    const characterElement = this.locationImage.querySelector(`[data-character-id="${charId}"]`);
-    if (characterElement) {
-      characterElement.remove();
-    }
   }
 }

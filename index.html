@@ -78,7 +78,44 @@
         </footer>
     </div>
     
-    <!-- Use ES modules instead of direct script -->
+    <!-- Debug Info - will be hidden in production -->
+    <div id="debug-info" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); padding: 10px; font-family: monospace; color: white; font-size: 12px; z-index: 1000; max-width: 300px; max-height: 200px; overflow: auto; display: none;"></div>
+    
+    <!-- Load main script module -->
     <script type="module" src="js/main.js"></script>
+    
+    <!-- Debugging script to show errors -->
+    <script>
+        // Capture and display errors for debugging
+        window.addEventListener('error', function(event) {
+            const debugInfo = document.getElementById('debug-info');
+            if (debugInfo) {
+                debugInfo.style.display = 'block';
+                const errorMsg = document.createElement('div');
+                errorMsg.textContent = `ERROR: ${event.message} at line ${event.lineno}`;
+                errorMsg.style.color = 'red';
+                debugInfo.appendChild(errorMsg);
+                
+                // Scroll to bottom
+                debugInfo.scrollTop = debugInfo.scrollHeight;
+            }
+            console.error(event);
+        });
+        
+        // Add a simple debug logger
+        window.debugLog = function(message) {
+            const debugInfo = document.getElementById('debug-info');
+            if (debugInfo) {
+                debugInfo.style.display = 'block';
+                const logMsg = document.createElement('div');
+                logMsg.textContent = message;
+                debugInfo.appendChild(logMsg);
+                
+                // Scroll to bottom
+                debugInfo.scrollTop = debugInfo.scrollHeight;
+            }
+            console.log(message);
+        };
+    </script>
 </body>
 </html>

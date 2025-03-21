@@ -4,8 +4,10 @@
  */
 export default class EventBus {
     constructor() {
+        console.log("EventBus constructor called");
         this.subscribers = {};
         this.debugMode = false;
+        console.log("EventBus initialized");
     }
 
     /**
@@ -19,6 +21,10 @@ export default class EventBus {
             this.subscribers[event] = [];
         }
         this.subscribers[event].push(callback);
+        
+        if (this.debugMode) {
+            console.log(`[EventBus] Subscribed to: ${event}`);
+        }
         
         // Return unsubscribe function
         return () => this.unsubscribe(event, callback);
@@ -34,27 +40,43 @@ export default class EventBus {
         
         this.subscribers[event] = this.subscribers[event]
             .filter(subscriber => subscriber !== callback);
+        
+        if (this.debugMode) {
+            console.log(`[EventBus] Unsubscribed from: ${event}`);
+        }
     }
 
     /**
      * Publish an event
      * @param {string} event - Event name
      * @param {any} data - Event data
+     * @return {any} Return value from the last event handler, if any
      */
     publish(event, data) {
         if (this.debugMode) {
-            console.log(`[EventBus] Event: ${event}`, data);
+            console.log(`[EventBus] Publishing: ${event}`, data);
         }
         
-        if (!this.subscribers[event]) return;
+        if (!this.subscribers[event]) return null;
+        
+        let returnValue = null;
         
         this.subscribers[event].forEach(callback => {
             try {
-                callback(data);
+                const result = callback(data);
+                // Store the result from the last callback (useful for query events)
+                returnValue = result;
             } catch (error) {
-                console.error(`Error in subscriber for event ${event}:`, error);
+                console.error(`[EventBus] Error in subscriber for event ${event}:`, error);
+                
+                // If we're debugging, show the stack trace
+                if (this.debugMode) {
+                    console.error(error.stack);
+                }
             }
         });
+        
+        return returnValue;
     }
 
     /**
@@ -63,5 +85,6 @@ export default class EventBus {
      */
     setDebugMode(enabled) {
         this.debugMode = enabled;
+        console.log(`[EventBus] Debug mode: ${enabled ? 'ENABLED' : 'DISABLED'}`);
     }
 }

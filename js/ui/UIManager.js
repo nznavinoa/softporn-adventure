@@ -12,6 +12,8 @@ export default class UIManager {
    * @param {ImageLoader} imageLoader - Image loader utility
    */
   constructor(eventBus, roomDisplay, commandInput, imageLoader) {
+    console.log("UIManager constructor called");
+    
     this.eventBus = eventBus;
     this.roomDisplay = roomDisplay;
     this.commandInput = commandInput;
@@ -30,59 +32,85 @@ export default class UIManager {
     
     // Subscribe to events
     this.subscribeToEvents();
+    
+    console.log("UIManager initialized");
   }
   
   /**
    * Initialize UI elements
    */
   setupUI() {
+    console.log("UIManager.setupUI() called");
+    
     this.gameDisplay = document.getElementById('game-display');
+    if(!this.gameDisplay) {
+      console.error("Game display element not found in the DOM");
+    } else {
+      console.log("Game display element found");
+    }
     
     // Create loading spinner
     this.loadingSpinner = document.createElement('div');
     this.loadingSpinner.className = 'loading-spinner';
     this.loadingSpinner.style.display = 'none';
-    document.querySelector('.container').appendChild(this.loadingSpinner);
+    
+    const container = document.querySelector('.container');
+    if (container) {
+      container.appendChild(this.loadingSpinner);
+    } else {
+      console.error("Container element not found in the DOM");
+    }
     
     // Initialize tooltip container
     this.setupTooltips();
+    
+    // If command input exists, set it up
+    if (this.commandInput) {
+      this.commandInput.setupUI();
+    }
+    
+    console.log("UIManager setup complete");
   }
   
   /**
    * Subscribe to relevant events
    */
   subscribeToEvents() {
+    console.log("Setting up UIManager event listeners");
+    
     this.eventBus.subscribe(GameEvents.GAME_INITIALIZED, () => {
+      console.log("UIManager received GAME_INITIALIZED event");
       this.setupUI();
     });
     
     this.eventBus.subscribe(GameEvents.DISPLAY_TEXT, (data) => {
+      console.log("UIManager received DISPLAY_TEXT event");
       this.addToGameDisplay(data.text, data.className || "");
     });
     
     this.eventBus.subscribe(GameEvents.UI_REFRESH, (data) => {
-      this.refreshUI(data.component);
+      console.log("UIManager received UI_REFRESH event:", data);
+      this.refreshUI(data.type);
     });
     
     this.eventBus.subscribe(GameEvents.UI_SHOW_DIALOG, (data) => {
+      console.log("UIManager received UI_SHOW_DIALOG event");
       this.showDialog(data.title, data.content, data.buttons);
     });
     
     this.eventBus.subscribe(GameEvents.UI_HIDE_DIALOG, () => {
+      console.log("UIManager received UI_HIDE_DIALOG event");
       this.hideDialog();
     });
     
-    this.eventBus.subscribe(GameEvents.IMAGE_LOADING_COMPLETE, () => {
-      this.setLoading(false);
+    this.eventBus.subscribe(GameEvents.DISPLAY_UPDATED, (data) => {
+      console.log("UIManager received DISPLAY_UPDATED event");
+      if (data.newContent) {
+        this.updateGameDisplay();
+      }
     });
     
-    this.eventBus.subscribe(GameEvents.ANIMATION_STARTED, () => {
-      this.setLoading(true);
-    });
-    
-    this.eventBus.subscribe(GameEvents.ANIMATION_ENDED, () => {
-      this.setLoading(false);
-    });
+    console.log("UIManager event listeners set up");
   }
   
   /**
@@ -92,6 +120,8 @@ export default class UIManager {
    */
   addToGameDisplay(content, className = "") {
     try {
+      console.log("UIManager adding to game display");
+      
       // Store in history
       this.gameOutput.push({ content, className });
       
@@ -106,7 +136,16 @@ export default class UIManager {
    * Update the game display with all content
    */
   updateGameDisplay() {
-    if (!this.gameDisplay) return;
+    console.log("UIManager.updateGameDisplay() called");
+    
+    if (!this.gameDisplay) {
+      console.error("Game display element not available");
+      this.gameDisplay = document.getElementById('game-display');
+      if (!this.gameDisplay) {
+        console.error("Game display element still not found");
+        return;
+      }
+    }
     
     // Clear previous content
     this.gameDisplay.innerHTML = "";
@@ -123,6 +162,8 @@ export default class UIManager {
     
     // Scroll to bottom
     this.gameDisplay.scrollTop = this.gameDisplay.scrollHeight;
+    
+    console.log("Game display updated");
   }
   
   /**
@@ -130,6 +171,8 @@ export default class UIManager {
    * @param {string} component - Component to refresh ('all' or specific component name)
    */
   refreshUI(component) {
+    console.log("UIManager.refreshUI() called for:", component);
+    
     // Refresh specific component or all UI
     if (component === 'all' || component === 'gameDisplay') {
       this.updateGameDisplay();
@@ -141,6 +184,9 @@ export default class UIManager {
     
     if (component === 'all' || component === 'roomObjects') {
       // Room display will handle this
+      if (this.roomDisplay) {
+        this.roomDisplay.setupUI();
+      }
     }
   }
   
@@ -148,23 +194,32 @@ export default class UIManager {
    * Update direction buttons based on available exits
    */
   updateDirectionButtons() {
-    const directions = this.eventBus.publish(GameEvents.GET_AVAILABLE_DIRECTIONS, {});
+    console.log("UIManager.updateDirectionButtons() called");
     
-    if (!directions || !Array.isArray(directions)) return;
-    
-    // Show/hide direction buttons
-    document.querySelectorAll('.direction-btn').forEach(btn => {
-      const dir = btn.dataset.command;
-      if (directions.includes(dir)) {
-        btn.style.display = 'inline-block';
-        
-        // Add subtle highlight effect for available directions
-        btn.classList.add('available-direction');
-      } else {
-        btn.style.display = 'none';
-        btn.classList.remove('available-direction');
+    try {
+      const directions = this.eventBus.publish(GameEvents.GET_AVAILABLE_DIRECTIONS, {});
+      
+      if (!directions || !Array.isArray(directions)) {
+        console.log("No directions available or invalid format");
+        return;
       }
-    });
+      
+      // Show/hide direction buttons
+      document.querySelectorAll('.direction-btn').forEach(btn => {
+        const dir = btn.dataset.command;
+        if (directions.includes(dir)) {
+          btn.style.display = 'inline-block';
+          
+          // Add subtle highlight effect for available directions
+          btn.classList.add('available-direction');
+        } else {
+          btn.style.display = 'none';
+          btn.classList.remove('available-direction');
+        }
+      });
+    } catch (error) {
+      console.error("Error updating direction buttons:", error);
+    }
   }
   
   /**
@@ -174,58 +229,64 @@ export default class UIManager {
    * @param {Array} buttons - Array of button configurations {text, id, callback}
    */
   showDialog(title, content, buttons) {
-    // Remove any existing dialog
-    this.hideDialog();
+    console.log("UIManager.showDialog() called");
     
-    // Create dialog container
-    const dialog = document.createElement('div');
-    dialog.className = 'game-dialog';
-    
-    // Add title
-    const titleElement = document.createElement('div');
-    titleElement.className = 'dialog-title';
-    titleElement.textContent = title;
-    dialog.appendChild(titleElement);
-    
-    // Add content
-    const contentElement = document.createElement('div');
-    contentElement.className = 'dialog-content';
-    contentElement.innerHTML = content;
-    dialog.appendChild(contentElement);
-    
-    // Add buttons
-    if (buttons && buttons.length > 0) {
-      const buttonsElement = document.createElement('div');
-      buttonsElement.className = 'dialog-buttons';
+    try {
+      // Remove any existing dialog
+      this.hideDialog();
       
-      buttons.forEach(button => {
-        const buttonElement = document.createElement('button');
-        buttonElement.textContent = button.text;
-        buttonElement.id = button.id;
-        buttonElement.addEventListener('click', () => {
-          if (button.callback) button.callback();
-          this.hideDialog();
+      // Create dialog container
+      const dialog = document.createElement('div');
+      dialog.className = 'game-dialog';
+      
+      // Add title
+      const titleElement = document.createElement('div');
+      titleElement.className = 'dialog-title';
+      titleElement.textContent = title;
+      dialog.appendChild(titleElement);
+      
+      // Add content
+      const contentElement = document.createElement('div');
+      contentElement.className = 'dialog-content';
+      contentElement.innerHTML = content;
+      dialog.appendChild(contentElement);
+      
+      // Add buttons
+      if (buttons && buttons.length > 0) {
+        const buttonsElement = document.createElement('div');
+        buttonsElement.className = 'dialog-buttons';
+        
+        buttons.forEach(button => {
+          const buttonElement = document.createElement('button');
+          buttonElement.textContent = button.text;
+          buttonElement.id = button.id;
+          buttonElement.addEventListener('click', () => {
+            if (button.callback) button.callback();
+            this.hideDialog();
+          });
+          buttonsElement.appendChild(buttonElement);
         });
-        buttonsElement.appendChild(buttonElement);
-      });
+        
+        dialog.appendChild(buttonsElement);
+      }
       
-      dialog.appendChild(buttonsElement);
+      // Add to DOM
+      document.body.appendChild(dialog);
+      this.showingDialog = true;
+      
+      // Add backdrop
+      const backdrop = document.createElement('div');
+      backdrop.className = 'dialog-backdrop';
+      document.body.appendChild(backdrop);
+      
+      // Use setTimeout to trigger CSS transition
+      setTimeout(() => {
+        dialog.classList.add('visible');
+        backdrop.classList.add('visible');
+      }, 10);
+    } catch (error) {
+      console.error("Error showing dialog:", error);
     }
-    
-    // Add to DOM
-    document.body.appendChild(dialog);
-    this.showingDialog = true;
-    
-    // Add backdrop
-    const backdrop = document.createElement('div');
-    backdrop.className = 'dialog-backdrop';
-    document.body.appendChild(backdrop);
-    
-    // Use setTimeout to trigger CSS transition
-    setTimeout(() => {
-      dialog.classList.add('visible');
-      backdrop.classList.add('visible');
-    }, 10);
   }
   
   /**
@@ -252,18 +313,6 @@ export default class UIManager {
     }
     
     this.showingDialog = false;
-  }
-  
-  /**
-   * Show or hide loading indicator
-   * @param {boolean} isLoading - Whether loading is in progress
-   */
-  setLoading(isLoading) {
-    this.isLoading = isLoading;
-    
-    if (this.loadingSpinner) {
-      this.loadingSpinner.style.display = isLoading ? 'block' : 'none';
-    }
   }
   
   /**
