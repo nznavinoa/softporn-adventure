@@ -1424,5 +1424,20 @@
         window.onload = initialize;
     </script>
     <a href="https://x.com/nznavinoa">Follow me on X</a>
+    <p>Page visits: <span id="visitCount">0</span></p>
+
+    <script>
+        // Get the current visit count from localStorage, default to 0 if not set
+        let visits = localStorage.getItem('visitCount') || 0;
+        
+        // Increment the count
+        visits = parseInt(visits) + 1;
+        
+        // Save the new count back to localStorage
+        localStorage.setItem('visitCount', visits);
+        
+        // Display the count on the page
+        document.getElementById('visitCount').innerText = visits;
+    </script>
 </body>
 </html>
