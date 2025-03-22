@@ -1,1427 +1,393 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Softporn Adventure</title>
-    <style>
-        body {
-            background-color: #000;
-            color: #33ff33;
-            font-family: 'Courier New', monospace;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.5;
-        }
-        
-        #game-container {
-            border: 1px solid #33ff33;
-            min-height: 400px;
-            padding: 20px;
-            margin-bottom: 20px;
-            overflow-y: auto;
-            height: 400px;
-        }
-        
-        #command-input {
-            width: 100%;
-            padding: 10px;
-            background-color: #000;
-            border: 1px solid #33ff33;
-            color: #33ff33;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            outline: none;
-        }
-        
-        .title {
-            text-align: center;
-            color: #fff;
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        
-        .copyright {
-            text-align: center;
-            color: #33ff33;
-            font-size: 12px;
-            margin-bottom: 20px;
-        }
-        
-        .blink {
-            animation: blink-animation 1s steps(5, start) infinite;
-        }
-        
-        @keyframes blink-animation {
-            to {
-                visibility: hidden;
-            }
-        }
-        
-        .input-line {
-            color: #fff;
-            margin-top: 10px;
-        }
-        
-        button {
-            background-color: #000;
-            color: #33ff33;
-            border: 1px solid #33ff33;
-            padding: 10px 20px;
-            margin-top: 10px;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-        }
-        
-        button:hover {
-            background-color: #33ff33;
-            color: #000;
-        }
-    </style>
-</head>
-<body>
-    <div class="title">SOFTPORN ADVENTURE</div>
-    <div class="copyright">WRITTEN BY CHUCK BENTON<br>COPYRIGHT 1981<br>BLUE SKY SOFTWARE</div>
-    
-    <div id="game-container"></div>
-    
-    <input type="text" id="command-input" placeholder="What shall I do?" autofocus>
-    
-    <script>
-        // Game state
-        const gameState = {
-            score: 0,
-            money: 20, // $2000
-            currentRoom: 3, // Start in the bar
-            inventory: [],
-            gameFlags: {
-                barButtonPressed: false,
-                mirrorExamined: false,
-                whiskeySeen: false,
-                beerSeen: false,
-                newspaperTaken: false,
-                ringTaken: false,
-                seedsFound: false,
-                appleFound: false,
-                appleEaten: false,
-                tv: false,
-                tvChannel: 1,
-                girlPleased: 0,
-                pimpPaid: false,
-                girlMarried: false,
-                hookerVisited: false,
-                dollInflated: false,
-                rubberWorn: false,
-                doorUnlocked: false,
-                waterOn: false,
-                cabinetReached: false,
-                pitcherFilled: false,
-                discoGirlGifts: 0,
-                wineGiven: false,
-                radioListened: false,
-                bumWineGiven: false,
-                phoneCall69: false,
-                phoneCallLiquor: false,
-                girlTiedUp: false,
-                dancedAtDisco: false
-            },
-            gameOver: false,
-            deathMessage: "",
-            objectLocations: {
-                "NEWSPAPER": 1,
-                "RING": 2,
-                "WHISKEY": 3,
-                "BEER": 3,
-                "HAMMER": null,
-                "FLOWERS": null,
-                "CANDY": 21,
-                "PILLS": null,
-                "PASS": null,
-                "KNIFE": null,
-                "MAGAZINE": 24,
-                "RUBBER": 24,
-                "WINE": null,
-                "WALLET": null,
-                "DOLL": 29,
-                "APPLE": null,
-                "PITCHER": null,
-                "ROPE": null,
-                "CONTROLLER": null,
-                "SEEDS": null
-            }
-        };
+import React, { useState, useEffect } from 'react';
+import { Terminal } from 'lucide-react';
 
-        // Rooms data
-        const rooms = {
-            1: { 
-                name: "HALLWAY", 
-                description: "I'M IN A HALLWAY.",
-                exits: { NORTH: 2, EAST: 3 },
-                objects: ["DESK"]
-            },
-            2: { 
-                name: "BATHROOM", 
-                description: "I'M IN A BATHROOM.",
-                exits: { SOUTH: 1 },
-                objects: ["WASHBASIN", "GRAFITTI", "MIRROR", "TOILET"]
-            },
-            3: { 
-                name: "BAR", 
-                description: "I'M IN A SLEAZY BAR.",
-                exits: { NORTH: 5, WEST: 1 },
-                objects: ["BUSINESSMAN", "BUTTON", "BARTENDER", "CURTAIN"]
-            },
-            4: { 
-                name: "STREET", 
-                description: "I'M ON A STREET OUTSIDE THE BAR.",
-                exits: { NORTH: 5, EAST: 11, WEST: 3 },
-                objects: ["BILLBOARD", "BUM"]
-            },
-            5: { 
-                name: "BACKROOM", 
-                description: "I'M IN THE BACKROOM.",
-                exits: { WEST: 3, UP: 9 },
-                objects: ["BIG DUDE", "TV"]
-            },
-            6: { 
-                name: "DUMPSTER", 
-                description: "I'M IN A FILTHY DUMPSTER!",
-                exits: { WEST: 4 },
-                objects: ["GARBAGE"]
-            },
-            7: { 
-                name: "ROOM", 
-                description: "I'M INSIDE THE ROOM I BROKE INTO!",
-                exits: { NORTH: 8 },
-                objects: []
-            },
-            8: { 
-                name: "LEDGE", 
-                description: "I'M ON A WINDOW LEDGE.",
-                exits: { SOUTH: 7, EAST: 9 },
-                objects: ["WINDOW"]
-            },
-            9: { 
-                name: "BEDROOM", 
-                description: "I'M IN A HOOKER'S BEDROOM.",
-                exits: { NORTH: 10, DOWN: 5 },
-                objects: ["FUNKY HOOKER", "BED"]
-            },
-            10: { 
-                name: "BALCONY", 
-                description: "I'M ON A HOOKER'S BALCONY.",
-                exits: { SOUTH: 9, DOWN: 6 },
-                objects: []
-            },
-            11: { 
-                name: "DOWNTOWN", 
-                description: "I'M ON A DOWNTOWN STREET.",
-                exits: { SOUTH: 12, EAST: 13, WEST: 4 },
-                objects: ["SIGN"]
-            },
-            12: { 
-                name: "MARRIAGE", 
-                description: "I'M IN A QUICKIE MARRIAGE CENTER.",
-                exits: { NORTH: 11 },
-                objects: ["PREACHER"]
-            },
-            13: { 
-                name: "CASINO", 
-                description: "I'M IN THE MAIN CASINO ROOM.",
-                exits: { SOUTH: 14, WEST: 11, DOWN: 15 },
-                objects: ["SLOT MACHINES"]
-            },
-            14: { 
-                name: "21 ROOM", 
-                description: "I'M IN THE '21 ROOM'.",
-                exits: { WEST: 11, DOWN: 15 },
-                objects: ["CARDS", "DEALER"]
-            },
-            15: { 
-                name: "LOBBY", 
-                description: "I'M IN THE LOBBY OF THE HOTEL.",
-                exits: { SOUTH: 17, WEST: 13, UP: 16 },
-                objects: ["BUSHES", "ELEVATOR"]
-            },
-            16: { 
-                name: "SUITE", 
-                description: "I'M IN THE HONEYMOON SUITE.",
-                exits: { DOWN: 15 },
-                objects: ["BED"]
-            },
-            17: { 
-                name: "HOTEL HALL", 
-                description: "I'M IN THE HOTEL HALLWAY.",
-                exits: { NORTH: 15, EAST: 19, UP: 18 },
-                objects: []
-            },
-            18: { 
-                name: "BALCONY", 
-                description: "I'M ON THE HONEYMOONER'S BALCONY.",
-                exits: { DOWN: 17 },
-                objects: ["PEEP HOLE"]
-            },
-            19: { 
-                name: "DESK", 
-                description: "I'M AT THE HOTEL DESK.",
-                exits: { WEST: 17 },
-                objects: ["BLONDE", "BUTTON"]
-            },
-            20: { 
-                name: "PHONE", 
-                description: "I'M IN A TELEPHONE BOOTH.",
-                exits: { EAST: 11 },
-                objects: ["TELEPHONE"]
-            },
-            21: { 
-                name: "DISCO", 
-                description: "I'M IN THE DISCO.",
-                exits: { EAST: 23, WEST: 22 },
-                objects: ["GIRL", "WAITRESS"]
-            },
-            22: { 
-                name: "STREET", 
-                description: "I'M ON A RESIDENTIAL STREET.",
-                exits: { EAST: 21 },
-                objects: ["TREE"]
-            },
-            23: { 
-                name: "ENTRANCE", 
-                description: "I'M IN THE DISCO'S ENTRANCE.",
-                exits: { NORTH: 21, WEST: 24 },
-                objects: ["DOOR"]
-            },
-            24: { 
-                name: "PHARMACY", 
-                description: "I'M IN THE PHARMACY.",
-                exits: { NORTH: 23, EAST: 29 },
-                objects: ["DISPLAY RACK"]
-            },
-            25: { 
-                name: "FOYER", 
-                description: "I'M IN THE PENTHOUSE FOYER.",
-                exits: { EAST: 14, WEST: 26 },
-                objects: []
-            },
-            26: { 
-                name: "JACUZZI", 
-                description: "I'M IN THE JACUZZI!",
-                exits: { EAST: 25 },
-                objects: ["GIRL"]
-            },
-            27: { 
-                name: "KITCHEN", 
-                description: "I'M IN THE KITCHEN.",
-                exits: { EAST: 25, WEST: 30 },
-                objects: ["SINK", "CABINET"]
-            },
-            28: { 
-                name: "GARDEN", 
-                description: "I'M IN THE GARDEN.",
-                exits: { UP: 15 },
-                objects: ["PLANT"]
-            },
-            29: { 
-                name: "LIVING ROOM", 
-                description: "I'M IN THE LIVING ROOM.",
-                exits: { NORTH: 30, DOWN: 24 },
-                objects: ["CLOSET"]
-            },
-            30: { 
-                name: "PORCH", 
-                description: "I'M ON THE PENTHOUSE PORCH.",
-                exits: { SOUTH: 29 },
-                objects: ["TELEPHONE"]
-            }
-        };
+const NeonSoftpornAdventure = () => {
+  const [gameState, setGameState] = useState({
+    currentLocation: 3, // Start in the bar (location 3)
+    inventory: [],
+    score: 0,
+    money: 1000, // Starting money ($1000)
+    gameText: [],
+    inputValue: '',
+    hasLoaded: false
+  });
 
-        // Special text descriptions for locations and objects
-        const specialDescriptions = {
-            "PEEP HOLE": "HMMMM..... THIS IS A PEEPING TOMS PARADISE!!!!\nACROSS THE WAY IS ANOTHER HOTEL. AHAH! THE CURTAINS ARE OPEN AT ONE WINDOW!\nTHE BATHROOM DOOR OPENS AND A GIRL WALKS OUT. HOLY COW! HER BOOBS ARE HUGE- AND LOOK AT THE WAY THEY SWAY AS SHE STRIDES ACROSS THE ROOM!\nNOW SHE'S TAKING A LARGE SAUSAGE SHAPED OBJECT AND LOOKING AT IT LONGINGLY! DAMN! SHE SHUTS THE CURTAIN!",
-            "HOOKER": "OH NO!!!!! I PAID FOR THIS?!?!?\nTHIS BEAST IS REALLY UGLY!!!!\nJEEZZZZ.....I HOPE I DON'T GET THE CLAP FROM THIS HOOKER.....................\nWELL...SHE SEEMS TO BE ANNOYED THAT I HAVEN'T JUMPED ON HER YET....GO TO IT STUD!!!!!",
-            "GIRL JACUZZI": "WHAT A BEAUTIFUL FACE!!! SHE'S LEANING BACK IN THE JACUZZI WITH HER EYES CLOSED AND SEEMS EXTREMELY RELAXED.\nTHE WATER IS BUBBLING UP AROUND HER....\nA '10'!! SHE'S SO BEAUTIFUL.............A GUY REALLY COULD FALL IN LOVE WITH A GIRL LIKE THIS. I PRESUME HER NAME IS 'EVE'....AT LEAST THATS WHAT THE THE TOWEL NEXT TO HER HAS EMBROIDERED ON IT.",
-            "GRAFITTI": "AT MY APPLE IS WHERE I SIT,\nWHEN I FEEL LIKE FONDLING IT'S BITS!\nCOMPUTER FREAKS PEEK BEFORE THEY POKE\nI'D LIKE TO NIBBLE HER FLOPPIES!\nASCIIAND YE SHALL RECEIVE",
-            "NEWSPAPER": "IT'S THE GAMBLER'S GAZETTE!!\nTHERE'S AN ARTICLE HERE WHICH TELLS HOW TO ACTIVATE THE GAMES AT THE ADVENTURER'S HOTEL! IT SAYS THAT BLACKJACK CAN BE PLAYED BY ENTERING 'PLAY 21'. THE SLOT MACHINES START WITH 'PLAY SLOTS'!",
-            "MAGAZINE": "HMMMMM..... AN INTERESTING MAGAZINE WITH A NICE CENTERFOLD!\nTHE FEATURE ARTICLE IS ABOUT HOW TO PICKUP AN INNOCENT GIRL AT A DISCO.\nIT SAYS- 'SHOWER HER WITH PRESENTS. DANCING WON'T HURT EITHER. AND WINE IS ALWAYS GOOD TO GET THINGS MOVING!'",
-            "DISCO GIRL": "CUTE AND INNOCENT! JUST THE WAY I LIKE MY WOMEN.\nOH- THIS GIRL IS GREAT! SHE HAS A BEAUTIFUL CALIFORNIA TAN....AND PERT LITTLE BREASTS...A TRIM WAIST......... AND WELL ROUNDED HIPS!!\nI DREAM ABOUT GETTING THIS NICE A GIRL. I HOPE YOU PLAY THIS GAME WELL ENOUGH SO I CAN HAVE MY JOLLYS WITH HER!\nYOU COULD MAKE YOUR PUPPET A VERY HAPPY MAN....................................",
-            "TV CHANNEL 1": "A MASKED MAN RUNS ACROSS THE SCREEN.\nJUMPING UP HE LANDS ON HIS HORSE AND YELLS 'HI-HO PLUTONIUM!!!!!' HE RIDES OFF INTO A GREEN SKY.......\nNOTHING LIKE A GOOD OLD WESTERN TO PASS THE TIME.......",
-            "TV CHANNEL 2": "IT'S 'THE PRICE IS FRIGHT!!!!!!' 'AND NOW FOR OUR FAVORITE HOST..........HAUNTY MAULE!!!!!!!!!!' HAUNTY JUMPS UP ON THE STAGE- HE ASKS 'AND WHO'S OUR FIRST LUCKY CONTESTANT?' THE ANNOUNCER POINTS OUT A LADY...THE CROWD SCREAMS IN ECSTACY AS SHE'S DRAGGED TO THE STAGE............",
-            "TV CHANNEL 3": "CAPTAIN JERK LOOKS AT THE DOOR FROM WHICH BEHIND THE NOISE IS COMING.\nTHROWING OPEN THE DOOR- HIS FACE TURNS A DEEP RED!!!!!!!!!\nHE SAYS 'SCOTTY! WHAT ARE YOU DOING?? SCOTTY REPLIES 'BUT CAPTAIN!?!? MY GIRL AND I- WE'RE ENGAGED!!!!\nJERK COMMANDS 'WELL THEN DISENGAGE!'....AS THE STARSHIP THRUSTED FORWARD........PENETRATING DEEPER INTO SPACE..........",
-            "TV CHANNEL 4": "THE NEWS!!! TODAY THE PRIME RATE WAS RAISED ONCE AGAIN...TO 257%! THIS DOES NOT COME NEAR THE RECORD SET IN 1996- WHEN IT BROKE THE 1000% MARK.........................\nTHE BIRTH RATE HAS TAKEN A DRAMATIC FALL....THIS IS DUE TO THE INCREASED USAGE OF COMPUTERS AS SEXUAL PARTNERS..\nHOWEVER....RAPES OF INNOCENT PEOPLE ARE ON THE INCREASE! AND WHO IS THE RAPIST?? COMPUTERIZED BANKING MACHINES LEAD THE LIST....FOLLOWED BY HOME COMPUTERS.....",
-            "TV CHANNEL 5": "MR. RODJERKS JUMPS UP WITH HIS BIG SNEAKERS AND SAYS IN HIS CHEERY VOICE.. GUESS WHAT- BOYS AND GIRLS?????? TODAY WE'RE GOING TO LEARN ABOUT SUCKERS!!\nSUSIE...SEE THE LOLLY-POP???? CAN YOU STICK IT IN YOUR MOUTH??? THAT'S RIGHT!\nTHAT'S A NICE LOLLY-POP....NICE AND HARD RIGHT?!?!?!?.................",
-            "TV CHANNEL 6": "CABLE TV!!!!!!!!\nTHERE SHOWING THE KINKIEST X-RATED MOVIES!!!!!!! THIS ONE'S TITLED 'DEEP NOSTRIL'.\nTHE PIMP LIKES THIS ONE!!!!!!\nHE'S ENGROSSED IN THE ACTION HE SEES!!!! SEEMS DISTRACTED.................",
-            "TAXI": "A TAXI PULLS UP AND SCREECHES TO A HALT!\nI GET IN THE BACK AND SIT DOWN.\nA SIGN SAYS 'WE SERVICE 3 DESTINATIONS. WHEN ASKED- PLEASE SPECIFY- DISCO.......CASINO....OR BAR.\nTHE DRIVER TURNS AND ASKS 'WHERE TO MAC??'",
-            "ELEVATOR": "THE ELEVATOR DOORS OPEN....I GET IN.\nAS THE DOORS CLOSE MUSIC STARTS PLAYING-IT'S THE USUAL ELEVATOR STUFF...BORING!\nWE START TO MOVE.....AFTER A FEW SECONDS THE ELEVATOR STOPS.\nTHE DOORS OPEN AND I GET OUT.",
-            "HOOKER SEX": "SHE SAYS 'ME FIRST!!!!!' SHE TAKES MY THROBBING TOOL INTO HER MOUTH!!!! SHE STARTS GOING TO WORK......FEELS SO GOOD!!!!!!\nTHEN SHE SMILES AS SHE BITES IT OFF! SHE SAYS 'NO ORAL SEX IN THIS GAME!!!!!!! SUFFER!!!!!!!'",
-            "BUM STORY": "WELL MY SON....HERE'S MY STORY. I CAME HERE MANY YEARS AGO- AND MY GOALS WERE THE SAME AS YOURS.....BUT THIS ADVENTURE WAS TOO MUCH FOR ME!\nHERE'S A GIFT.......CARRY IT WITH YOU AT ALL TIMES!!!!!\nTHERE'S SOME KINKY GIRLS IN THIS TOWN!! AND YOU NEVER KNOW WHEN YOU MAY NEED TO USE THIS TO DEFEND YOURSELF!!!!!!!",
-            "INFLATABLE DOLL": "OH BOY!!!!!- IT'S GOT 3 SPOTS TO TRY!!!\nI THRUST INTO THE DOLL- KINKY....EH???\nI START TO INCREASE MY TEMPO...FASTER AND FASTER I GO!!!!\nSUDDENLY THERE'S A FLATULENT NOISE AND THE DOLL BECOMES A POPPED BALLOON SOARING AROUND THE ROOM! IT FLIES OUT OF THE ROOM AND DISAPPEARS!",
-            "JACUZZI GIRL SEX": "SHE HOPS OUT OF THE TUB- THE STEAM RISING FROM HER SKIN.......HER BODY IS THE BEST LOOKING I'VE EVER SEEN!!!\nTHEN SHE COMES UP TO ME AND GIVES THE BEST TIME OF MY LIFE!!!\nWELL......I GUESS THAT'S IT! AS YOUR PUPPET IN THIS GAME I THANK YOU FOR THE PLEASURE YOU HAVE BROUGHT ME.... SO LONG......I'VE GOT TO GET BACK TO MY NEW GIRL HERE! KEEP IT UP!",
-            "HOOKER SEX SUCCESS": "IT'S A GOOD THING I WAS WEARING THAT RUBBER!!!!!!\nSHE WAS OK- BUT REALLY.......CAN'T YOU DO BETTER THAN THIS??\nTHE SCORE NOW IS '1' OUT OF A POSSIBLE '3'.....SO CONGRATULATIONS!!!!\nWELL........GO TO IT- YOU STUD!!!! FIND ME ANOTHER GIRL!",
-            "TIED UP": "SHE SAYS 'LAY DOWN HONEY- LET ME GIVE YOU A SPECIAL SUPRISE!!\nI LAY DOWN AND SHE SAYS 'OK- NOW CLOSE YOUR EYES'. I CLOSE MY EYES AND SHE SHE STARTS TO GO TO WORK ON ME.........\nI'M REALLY ENJOYING MYSELF WHEN SUDDENLY SHE TIES ME TO THE BED!!!! THEN SHE SAYS 'SO LONG- TURKEY!' AND RUNS OUT OF THE ROOM!!!\nWELL- THE SCORE IS NOW '2' OUT OF A POSSIBLE '3'.........BUT I'M ALSO TIED TO THE BED AND CAN'T MOVE.",
-            "PILLS": "THIS STUFF IS GOOD! I'M BREATHING HEAVILY- I'VE NEVER BEEN THIS HORNY!!!\nI'VE JUST GOT TO DO SOMETHING!................................................\nAH...THERE GOES A FEMALE GERMAN SHEPARD! THAT GIVES ME AN IDEA!................\nKINKY DOG!!!!!! CHEWED ME TO DEATH!!!"
-        };
+  const locationDescriptions = {
+    1: "I'M IN A HALLWAY.",
+    2: "I'M IN A BATHROOM.",
+    3: "I'M IN A SLEAZY BAR.",
+    4: "I'M ON A STREET OUTSIDE THE BAR.",
+    5: "I'M IN THE BACKROOM.",
+    6: "I'M IN A FILTHY DUMPSTER!",
+    7: "I'M INSIDE THE ROOM I BROKE INTO!",
+    8: "I'M ON A WINDOW LEDGE.",
+    9: "I'M IN A HOOKER'S BEDROOM.",
+    10: "I'M ON A HOOKER'S BALCONY.",
+    11: "I'M ON A DOWNTOWN STREET.",
+    12: "I'M IN A QUICKIE MARRIAGE CENTER.",
+    13: "I'M IN THE MAIN CASINO ROOM.",
+    14: "I'M IN THE '21 ROOM'.",
+    15: "I'M IN THE LOBBY OF THE HOTEL.",
+    16: "I'M IN THE HONEYMOON SUITE.",
+    17: "I'M IN THE HOTEL HALLWAY.",
+    18: "I'M ON THE HONEYMOONER'S BALCONY.",
+    19: "I'M AT THE HOTEL DESK.",
+    20: "I'M IN A TELEPHONE BOOTH.",
+    21: "I'M IN THE DISCO.",
+    22: "I'M ON A RESIDENTIAL STREET.",
+    23: "I'M IN THE DISCO'S ENTRANCE.",
+    24: "I'M IN THE PHARMACY.",
+    25: "I'M IN THE PENTHOUSE FOYER.",
+    26: "I'M IN THE JACUZZI!",
+    27: "I'M IN THE KITCHEN.",
+    28: "I'M IN THE GARDEN.",
+    29: "I'M IN THE LIVING ROOM.",
+    30: "I'M ON THE PENTHOUSE PORCH."
+  };
 
-        // Command handler
-        function handleCommand(command) {
-            if (gameState.gameOver) {
-                return "GAME OVER. REFRESH THE PAGE TO START AGAIN.";
-            }
-            
-            // If tied to the bed
-            if (gameState.gameFlags.girlTiedUp) {
-                return "BUT I'M TIED TO THE BED!!!!!";
-            }
-            
-            command = command.toUpperCase().trim();
-            
-            // Handle one-letter navigation commands
-            if (command === "N" || command === "NORTH") {
-                return movePlayer("NORTH");
-            } else if (command === "S" || command === "SOUTH") {
-                return movePlayer("SOUTH");
-            } else if (command === "E" || command === "EAST") {
-                return movePlayer("EAST");
-            } else if (command === "W" || command === "WEST") {
-                return movePlayer("WEST");
-            } else if (command === "U" || command === "UP") {
-                return movePlayer("UP");
-            } else if (command === "D" || command === "DOWN") {
-                return movePlayer("DOWN");
-            }
-            
-            // Handle inventory command
-            if (command === "I" || command === "INVENTORY") {
-                return showInventory();
-            }
-            
-            // Handle look command
-            if (command === "LOOK") {
-                return lookAround();
-            }
-            
-            // Handle scoring command
-            if (command === "SCORE") {
-                return `YOUR SCORE IS ${gameState.score} OUT OF '3'`;
-            }
-            
-            // Handle quit command
-            if (command === "QUIT" || command === "Q") {
-                if (confirm("SAVE GAME?? (Y/N)")) {
-                    alert("GAME SAVED (NOT REALLY, THIS FEATURE IS NOT IMPLEMENTED)");
-                }
-                gameState.gameOver = true;
-                return "THANKS FOR PLAYING!";
-            }
-            
-            // More complex commands
-            if (command.includes(" ")) {
-                const [verb, ...nounParts] = command.split(" ");
-                const noun = nounParts.join(" ");
-                
-                return processVerbNoun(verb, noun);
-            }
-            
-            return "HUH?";
-        }
+  // Items in each location
+  const locationItems = {
+    1: ["A DESK", "A BUSINESSMAN"],
+    2: ["A WASHBASIN", "A TOILET", "GRAFITTI", "A MIRROR"],
+    3: ["THE BARTENDER", "A BIG DUDE!", "A BUTTON", "A CURTAIN"],
+    4: ["A BILLBOARD"],
+    5: ["A TV", "A TABLE"],
+    9: ["A FUNKY HOOKER", "A BED"],
+    13: ["SLOT MACHINES"],
+    14: ["CARDS", "A DEALER"],
+    19: ["A VOLUPTOUS BLONDE"],
+    21: ["A GIRL"],
+    24: ["A DISPLAY RACK", "ADVENTUREBOY MAGAZINE", "A RUBBER"],
+    26: ["A GIRL"],
+    28: ["BUSHES", "A TREE"],
+  };
+
+  const directions = {
+    1: "NORTH AND EAST",
+    2: "SOUTH",
+    3: "NORTH AND WEST",
+    4: "NORTH, EAST AND WEST",
+    5: "WEST AND UP",
+    6: "WEST",
+    7: "NORTH",
+    8: "SOUTH AND EAST",
+    9: "NORTH AND DOWN",
+    10: "SOUTH AND DOWN",
+    11: "SOUTH, EAST AND WEST",
+    12: "EAST AND UP",
+    13: "SOUTH, WEST AND DOWN",
+    14: "WEST AND DOWN",
+    15: "SOUTH AND WEST",
+    16: "BY MAGIC!",
+    17: "NORTH, EAST AND UP",
+    18: "UP",
+    19: "EAST"
+  };
+
+  // Initial game setup
+  useEffect(() => {
+    if (!gameState.hasLoaded) {
+      setGameState(prevState => ({
+        ...prevState,
+        gameText: [
+          "SOFTPORN ADVENTURE",
+          "WRITTEN BY CHUCK BENTON",
+          "COPYRIGHT 1981",
+          "BLUE SKY SOFTWARE",
+          "",
+          "80s NEON REMAKE",
+          "",
+          locationDescriptions[prevState.currentLocation],
+          "",
+          `ITEMS IN SIGHT ARE: ${locationItems[prevState.currentLocation]?.join(", ") || "NOTHING AT ALL!!!!!"}`,
+          "",
+          `OTHER AREAS ARE: ${directions[prevState.currentLocation] || "NOWHERE"}`
+        ],
+        hasLoaded: true
+      }));
+    }
+  }, [gameState.hasLoaded]);
+
+  const handleInput = (e) => {
+    e.preventDefault();
+    const command = gameState.inputValue.toUpperCase();
+    let response = '';
+
+    if (command === 'N' || command === 'NORTH') {
+      response = movePlayer('NORTH');
+    } else if (command === 'S' || command === 'SOUTH') {
+      response = movePlayer('SOUTH');
+    } else if (command === 'E' || command === 'EAST') {
+      response = movePlayer('EAST');
+    } else if (command === 'W' || command === 'WEST') {
+      response = movePlayer('WEST');
+    } else if (command === 'LOOK') {
+      response = lookAround();
+    } else if (command === 'I' || command === 'INVENTORY') {
+      response = showInventory();
+    } else if (command === 'SCORE') {
+      response = `YOUR SCORE IS ${gameState.score} OUT OF '3'`;
+    } else if (command === 'QUIT' || command === 'Q') {
+      response = "SAVE GAME?? (Y/N)";
+    } else if (command.startsWith('PLAY')) {
+      if (gameState.currentLocation === 13 && command.includes('SLOT')) {
+        response = playSlots();
+      } else if (gameState.currentLocation === 14 && command.includes('21')) {
+        response = "THIS WILL COST $100 EACH TIME\nYOU HAVE $" + (gameState.money/100) + "00\nWOULD YOU LIKE TO PLAY? (Y/N)";
+      } else {
+        response = "PLAYFUL BUGGER, EH??";
+      }
+    } else {
+      // Parse more complex commands
+      const words = command.split(' ');
+      const verb = words[0];
+      const noun = words.length > 1 ? words[1] : '';
+      
+      response = parseCommand(verb, noun);
+    }
+
+    // Add command and response to game text
+    setGameState(prevState => ({
+      ...prevState,
+      gameText: [...prevState.gameText, `> ${prevState.inputValue}`, response],
+      inputValue: ''
+    }));
+  };
+
+  const movePlayer = (direction) => {
+    const currentLoc = gameState.currentLocation;
+    let newLoc = currentLoc;
+    let allowedDirections = [];
+    
+    // Determine allowed directions based on the current location
+    if (directions[currentLoc]) {
+      const dirString = directions[currentLoc];
+      if (dirString.includes("NORTH")) allowedDirections.push("NORTH");
+      if (dirString.includes("SOUTH")) allowedDirections.push("SOUTH");
+      if (dirString.includes("EAST")) allowedDirections.push("EAST");
+      if (dirString.includes("WEST")) allowedDirections.push("WEST");
+      if (dirString.includes("UP")) allowedDirections.push("UP");
+      if (dirString.includes("DOWN")) allowedDirections.push("DOWN");
+    }
+    
+    if (!allowedDirections.includes(direction)) {
+      return "I CAN'T GO IN THAT DIRECTION!!";
+    }
+    
+    // Simple movement map (this is a simplified version)
+    if (direction === "NORTH") {
+      if (currentLoc === 3) newLoc = 1;
+      else if (currentLoc === 4) newLoc = 3;
+      else if (currentLoc === 9) newLoc = 5;
+    } else if (direction === "SOUTH") {
+      if (currentLoc === 1) newLoc = 3;
+      else if (currentLoc === 3) newLoc = 4;
+      else if (currentLoc === 5) newLoc = 9;
+    } else if (direction === "EAST") {
+      if (currentLoc === 1) newLoc = 2;
+      else if (currentLoc === 4) newLoc = 11;
+      else if (currentLoc === 11) newLoc = 13;
+    } else if (direction === "WEST") {
+      if (currentLoc === 2) newLoc = 1;
+      else if (currentLoc === 11) newLoc = 4;
+      else if (currentLoc === 13) newLoc = 11;
+    }
+    
+    if (newLoc === currentLoc) {
+      return "I CAN'T GO IN THAT DIRECTION!!";
+    }
+    
+    setGameState(prevState => ({
+      ...prevState,
+      currentLocation: newLoc
+    }));
+    
+    return [
+      locationDescriptions[newLoc],
+      "",
+      `ITEMS IN SIGHT ARE: ${locationItems[newLoc]?.join(", ") || "NOTHING AT ALL!!!!!"}`,
+      "",
+      `OTHER AREAS ARE: ${directions[newLoc] || "NOWHERE"}`
+    ].join("\n");
+  };
+
+  const lookAround = () => {
+    const currentLoc = gameState.currentLocation;
+    return [
+      locationDescriptions[currentLoc],
+      "",
+      `ITEMS IN SIGHT ARE: ${locationItems[currentLoc]?.join(", ") || "NOTHING AT ALL!!!!!"}`,
+      "",
+      `OTHER AREAS ARE: ${directions[currentLoc] || "NOWHERE"}`
+    ].join("\n");
+  };
+
+  const showInventory = () => {
+    if (gameState.inventory.length === 0) {
+      return "I'M CARRYING THE FOLLOWING:\nNOTHING!!";
+    }
+    return "I'M CARRYING THE FOLLOWING:\n" + gameState.inventory.join(", ");
+  };
+
+  const playSlots = () => {
+    if (gameState.money < 100) {
+      return "I'M BROKE!!!- THAT MEANS DEATH!!!!!!!!";
+    }
+    
+    // Simple slot machine simulation
+    const symbols = ["$", "#", "@", "&", "%", "!", "*"];
+    const slot1 = symbols[Math.floor(Math.random() * symbols.length)];
+    const slot2 = symbols[Math.floor(Math.random() * symbols.length)];
+    const slot3 = symbols[Math.floor(Math.random() * symbols.length)];
+    
+    let winnings = 0;
+    let message = `${slot1} | ${slot2} | ${slot3}\n`;
+    
+    if (slot1 === slot2 && slot2 === slot3) {
+      winnings = 1500;
+      message += "TRIPLES!!!!!! YOU WIN $1500";
+    } else if (slot1 === slot2 || slot2 === slot3 || slot1 === slot3) {
+      winnings = 300;
+      message += "A PAIR! YOU WIN $300";
+    } else {
+      message += "YOU LOSE!";
+    }
+    
+    const newMoney = gameState.money - 100 + winnings;
+    
+    setGameState(prevState => ({
+      ...prevState,
+      money: newMoney
+    }));
+    
+    return message + `\nYOU NOW HAVE $${newMoney/100}00`;
+  };
+
+  const parseCommand = (verb, noun) => {
+    // This is where we'd implement the complex command parsing
+    // For demo purposes, just returning some appropriate responses
+    
+    if (verb === 'TAKE' || verb === 'GET') {
+      const currentItems = locationItems[gameState.currentLocation] || [];
+      const matchingItems = currentItems.filter(item => item.includes(noun));
+      
+      if (matchingItems.length > 0) {
+        // In a real implementation, we'd need to update the location items as well
+        setGameState(prevState => ({
+          ...prevState,
+          inventory: [...prevState.inventory, matchingItems[0]]
+        }));
+        return `OK, I TOOK ${matchingItems[0]}`;
+      } else {
+        return "I DON'T SEE IT HERE!!";
+      }
+    }
+    
+    if (verb === 'DROP') {
+      const matchingItems = gameState.inventory.filter(item => item.includes(noun));
+      
+      if (matchingItems.length > 0) {
+        setGameState(prevState => ({
+          ...prevState,
+          inventory: prevState.inventory.filter(item => !item.includes(noun))
+        }));
+        return `OK, I DROPPED ${matchingItems[0]}`;
+      } else {
+        return "I DON'T HAVE IT!!";
+      }
+    }
+    
+    if (verb === 'EXAMINE' || verb === 'LOOK' || verb === 'READ') {
+      if (noun === 'GRAFITTI' && gameState.currentLocation === 2) {
+        return "AT MY APPLE IS WHERE I SIT,\nWHEN I FEEL LIKE FONDLING IT'S BITS!\nTHE PASSWORD IS: BELLYBUTTON";
+      }
+      if (noun === 'BILLBOARD' && gameState.currentLocation === 4) {
+        return "FOR THOSE WHO DESIRE THE BEST:\nANNOUNCING\nTHE MOST EXCLUSIVE,\nTHE EXCITING,\nTHE HOTTEST SPOT IN TOWN,\nSWINGING SINGLE'S DISCO";
+      }
+      if (noun === 'MAGAZINE' && gameState.inventory.includes("ADVENTUREBOY MAGAZINE")) {
+        return "THE FEATURE ARTICLE IS ABOUT HOW TO PICK UP AN INNOCENT GIRL AT A DISCO.\nIT SAYS- 'SHOWER HER WITH PRESENTS. DANCING WON'T HURT EITHER. AND WINE IS ALWAYS GOOD TO GET THINGS MOVING!'";
+      }
+    }
+    
+    if (verb === 'PUSH' || verb === 'PRESS') {
+      if (noun === 'BUTTON' && gameState.currentLocation === 3) {
+        return "A VOICE ASKS 'WHATS THE PASSWORD?' (ONE WORD)";
+      }
+    }
+    
+    if (verb === 'TV' && gameState.currentLocation === 5) {
+      if (noun === 'ON') {
+        return "CHOOSE A CHANNEL (1-9)";
+      } else {
+        return "IT'S TURNED OFF";
+      }
+    }
+    
+    if (verb === 'DANCE' && gameState.currentLocation === 21) {
+      return "BOOGIE WOOGIE!!!!\nYEH YEH YEH!!!\nI GOT THE STEPS, MAN!!";
+    }
+    
+    return "I DON'T KNOW HOW TO DO THAT.";
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-black text-white font-mono overflow-hidden">
+      {/* Game title */}
+      <div className="bg-purple-900 p-4 text-center border-b-4 border-pink-500">
+        <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 tracking-wider">
+          SOFTPORN ADVENTURE
+        </h1>
+        <div className="text-cyan-400 text-sm mt-1">80s NEON EDITION</div>
+      </div>
+      
+      {/* Game display */}
+      <div className="flex-1 overflow-hidden flex flex-col p-4 bg-gradient-to-b from-black to-purple-900 border-l-2 border-r-2 border-cyan-500">
+        <div 
+          className="flex-1 overflow-y-auto p-4 font-mono text-lg"
+          style={{ 
+            textShadow: '0 0 5px #0ff, 0 0 10px #0ff',
+            background: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7))'
+          }}
+        >
+          {gameState.gameText.map((text, index) => (
+            <div key={index} className={`mb-2 ${text.startsWith('>') ? 'text-pink-500' : 'text-cyan-300'}`}>
+              {text.split('\n').map((line, i) => (
+                <div key={i}>{line}</div>
+              ))}
+            </div>
+          ))}
+        </div>
         
-        // Movement handler
-        function movePlayer(direction) {
-            const currentRoom = rooms[gameState.currentRoom];
-            
-            if (currentRoom.exits[direction]) {
-                gameState.currentRoom = currentRoom.exits[direction];
-                return lookAround();
-            }
-            
-            return "I CAN'T GO IN THAT DIRECTION!!";
-        }
-        
-        // Look around function
-        function lookAround() {
-            const room = rooms[gameState.currentRoom];
-            let output = room.description + "\n";
-            
-            // List objects in the room
-            if (room.objects.length > 0) {
-                output += "\nITEMS IN SIGHT ARE: " + room.objects.join(", ");
-            } else {
-                output += "\nITEMS IN SIGHT ARE: NOTHING AT ALL!!!!!";
-            }
-            
-            // Add inventory items that are in this room
-            for (const [item, location] of Object.entries(gameState.objectLocations)) {
-                if (location === gameState.currentRoom) {
-                    output += ", " + item;
-                }
-            }
-            
-            // List exits
-            output += "\n\nOTHER AREAS ARE: ";
-            const exits = [];
-            for (const direction in room.exits) {
-                exits.push(direction);
-            }
-            output += exits.join(", ");
-            
-            return output;
-        }
-        
-        // Show inventory
-        function showInventory() {
-            let output = "I'M CARRYING THE FOLLOWING:\n";
-            
-            const inventoryItems = [];
-            for (const [item, location] of Object.entries(gameState.objectLocations)) {
-                if (location === "INVENTORY") {
-                    inventoryItems.push(item);
-                }
-            }
-            
-            if (inventoryItems.length > 0) {
-                output += inventoryItems.join(", ");
-            } else {
-                output += "NOTHING!!";
-            }
-            
-            return output;
-        }
-        
-        // Process verb-noun combinations
-        function processVerbNoun(verb, noun) {
-            verb = verb.toUpperCase();
-            noun = noun.toUpperCase();
-            
-            // LOOK/EXAMINE commands
-            if (["LOOK", "EXAMINE", "READ", "SEARCH"].includes(verb)) {
-                return examineObject(noun);
-            }
-            
-            // TAKE/GET commands
-            if (["TAKE", "GET", "GRAB"].includes(verb)) {
-                return takeObject(noun);
-            }
-            
-            // DROP commands
-            if (["DROP", "LEAVE", "PLACE", "GIVE"].includes(verb)) {
-                return dropObject(noun);
-            }
-            
-            // USE/WEAR commands
-            if (["USE", "WEAR"].includes(verb)) {
-                return useObject(noun);
-            }
-            
-            // OPEN commands
-            if (["OPEN", "PULL"].includes(verb)) {
-                return openObject(noun);
-            }
-            
-            // PUSH/PRESS commands
-            if (["PUSH", "PRESS"].includes(verb)) {
-                return pushObject(noun);
-            }
-            
-            // BUY/ORDER commands
-            if (["BUY", "ORDER"].includes(verb)) {
-                return buyObject(noun);
-            }
-            
-            // PLAY commands
-            if (verb === "PLAY") {
-                return playObject(noun);
-            }
-            
-            // FUCK/SEDUCE/RAPE/SCREW commands
-            if (["FUCK", "SEDUCE", "RAPE", "SCREW"].includes(verb)) {
-                return interactWithPerson(noun);
-            }
-            
-            // CLIMB commands
-            if (verb === "CLIMB") {
-                return climbObject(noun);
-            }
-            
-            // JUMP commands
-            if (verb === "JUMP") {
-                if (gameState.currentRoom === 8) { // On the ledge
-                    gameState.gameOver = true;
-                    gameState.deathMessage = "AAAAAEEEEEIIIIIIII!!!!!! SPLAAATTTTT!!!!!";
-                    return gameState.deathMessage;
-                }
-                return "WHOOOPEEEEE!!!";
-            }
-            
-            // TV commands
-            if (verb === "TV") {
-                if (noun === "ON") {
-                    if (gameState.currentRoom === 5 && gameState.objectLocations["CONTROLLER"] === "INVENTORY") {
-                        gameState.gameFlags.tv = true;
-                        return "THE TV TURNS ON. CHOOSE A CHANNEL (1-9)";
-                    }
-                    return "I NEED THE REMOTE CONTROL UNIT!";
-                } else if (noun === "OFF") {
-                    gameState.gameFlags.tv = false;
-                    return "OK";
-                } else if (noun >= "1" && noun <= "9") {
-                    if (gameState.gameFlags.tv) {
-                        gameState.gameFlags.tvChannel = parseInt(noun);
-                        const channel = `TV CHANNEL ${gameState.gameFlags.tvChannel}`;
-                        if (specialDescriptions[channel]) {
-                            return specialDescriptions[channel] + "\n\nCHANGE THE CHANNEL?(Y/N)";
-                        }
-                        return "STATIC. CHANGE THE CHANNEL?(Y/N)";
-                    }
-                    return "THE TV IS OFF.";
-                }
-            }
-            
-            // INFLATE command
-            if (verb === "INFLATE") {
-                if (noun === "DOLL") {
-                    if (gameState.objectLocations["DOLL"] === "INVENTORY") {
-                        gameState.gameFlags.dollInflated = true;
-                        return "OK";
-                    }
-                    return "I CAN'T UNLESS I'M HOLDING IT CLOSE!!";
-                }
-                return "BUT THE PRIME RATE IS ALREADY 257%!!";
-            }
-            
-            // CALL/DIAL command
-            if (["CALL", "DIAL"].includes(verb)) {
-                if (gameState.currentRoom === 20) { // In phone booth
-                    if (noun === "555-6969") {
-                        gameState.gameFlags.phoneCall69 = true;
-                        return "A VOICE SAYS 'HELLO, PLEASE ANSWER THE QUESTIONS WITH ONE WORD ANSWERS!\n\nWHAT'S YOUR FAVORITE GIRLS NAME? ALICE\n\nNAME A NICE PART OF HER ANATOMY. EYES\n\nWHAT DO YOU LIKE TO DO WITH HER? TALK\n\nAND THE BEST PART OF YOUR BODY?!? BRAIN\n\nFINALLY, YOUR FAVORITE OBJECT? BOOK\n\nHE HANGS UP!!!!!";
-                    } else if (noun === "555-0987") {
-                        if (gameState.gameFlags.girlMarried) {
-                            gameState.gameFlags.phoneCallLiquor = true;
-                            return "A VOICE ANSWERS AND SAYS 'WINE FOR THE NERVOUS NEWLYWEDS!! COMING RIGHT UP!!!!";
-                        }
-                        return "SOMEBODY ANSWERS AND HANGS UP!!!!";
-                    }
-                    return "NOBODY ANSWERS";
-                }
-                return "THERE'S NO PHONE!";
-            }
-            
-            // ANSWER command
-            if (verb === "ANSWER") {
-                if (gameState.currentRoom === 30 && gameState.gameFlags.phoneCall69) {
-                    gameState.gameFlags.phoneCall69 = false;
-                    return "A GIRL SAYS 'HI HONEY! THIS IS ALICE.\nDEAR, WHY DON'T YOU FORGET THIS GAME AND TALK WITH ME???\nAFTER ALL, YOUR BRAIN HAS ALWAYS TURNED ME ON!!!!\nSO BRING A BOOK AND COME PLAY WITH MY EYES !!!!\nSHE HANGS UP!!";
-                }
-                return "IT'S NOT RINGING!";
-            }
-            
-            // DRINK command
-            if (verb === "DRINK") {
-                if (noun === "WHISKEY" && gameState.objectLocations["WHISKEY"] === "INVENTORY") {
-                    return "THIS STUFF IS ROT-GUT! GIVE IT TO SOMEONE....I DON'T WANT IT.";
-                } else if (noun === "BEER" && gameState.objectLocations["BEER"] === "INVENTORY") {
-                    return "HEH...HEH....HEY!!!! THIS STUFF'S OK!";
-                } else if (noun === "WINE" && gameState.objectLocations["WINE"] === "INVENTORY") {
-                    return "SOUR GRAPES.....";
-                }
-                return "GET YOUR HEAD EXAMINED!!!";
-            }
-            
-            // EAT command
-            if (verb === "EAT") {
-                if (noun === "APPLE" && gameState.objectLocations["APPLE"] === "INVENTORY") {
-                    return "SORRY...NOT HUNGRY.";
-                } else if (noun === "CANDY" && gameState.objectLocations["CANDY"] === "INVENTORY") {
-                    // Special handling for giving candy to the girl
-                    if (gameState.currentRoom === 21) { // In disco
-                        gameState.gameFlags.discoGirlGifts++;
-                        gameState.objectLocations["CANDY"] = null;
-                        return "SHE SMILES AND EATS A COUPLE!!";
-                    }
-                    return "YECCHHH!!!! TASTE'S AWFUL!";
-                } else if (noun === "PILLS" && gameState.objectLocations["PILLS"] === "INVENTORY") {
-                    gameState.gameOver = true;
-                    gameState.deathMessage = specialDescriptions["PILLS"];
-                    return gameState.deathMessage;
-                }
-                return "YECCHHH!!!! TASTE'S AWFUL!";
-            }
-            
-            // FILL command
-            if (verb === "FILL") {
-                if (noun === "PITCHER" && gameState.objectLocations["PITCHER"] === "INVENTORY") {
-                    if (gameState.currentRoom === 27 && gameState.gameFlags.waterOn) {
-                        gameState.gameFlags.pitcherFilled = true;
-                        return "OK";
-                    }
-                    return "FIND A WORKING SINK";
-                }
-                return "FIND ME THE PITCHER SO I DON'T SPILL IT!";
-            }
-            
-            // WATER command
-            if (verb === "WATER") {
-                if (noun === "ON" && gameState.currentRoom === 27) {
-                    gameState.gameFlags.waterOn = true;
-                    return "OK";
-                } else if (noun === "OFF" && gameState.currentRoom === 27) {
-                    gameState.gameFlags.waterOn = false;
-                    return "OK";
-                }
-                return "FIND A WORKING SINK";
-            }
-            
-            // POUR command
-            if (verb === "POUR") {
-                if (gameState.objectLocations["PITCHER"] === "INVENTORY" && gameState.gameFlags.pitcherFilled) {
-                    if (gameState.currentRoom === 28 && gameState.objectLocations["SEEDS"] === "INVENTORY") {
-                        gameState.gameFlags.pitcherFilled = false;
-                        gameState.objectLocations["SEEDS"] = null;
-                        // Add apple to the garden
-                        gameState.objectLocations["APPLE"] = 28;
-                        return "A TREE SPROUTS!!";
-                    }
-                    gameState.gameFlags.pitcherFilled = false;
-                    return "IT POURS INTO THE GROUND";
-                }
-                return "PITCHER'S EMPTY!";
-            }
-            
-            // DANCE command
-            if (verb === "DANCE") {
-                if (gameState.currentRoom === 21) { // In the disco
-                    gameState.gameFlags.dancedAtDisco = true;
-                    return "BOOGIE WOOGIE!!!!\n\nYEH YEH YEH!!!\n\nI GOT THE STEPS, MAN!!";
-                }
-                return "NOT MUCH ROOM TO DANCE HERE.";
-            }
-            
-            // MARRY command
-            if (verb === "MARRY") {
-                if (noun === "GIRL" && gameState.currentRoom === 12) { // Marriage center
-                    if (gameState.gameFlags.discoGirlGifts >= 3) {
-                        if (gameState.money < 30) {
-                            return "THE GIRL SAYS 'BUT YOU'LL NEED $2000 FOR THE HONEYMOON SUITE!'\nTHE PREACHER SAYS 'I'LL NEED $1000 ALSO!'";
-                        }
-                        gameState.money -= 30;
-                        gameState.gameFlags.girlMarried = true;
-                        
-                        // Move the girl to the honeymoon suite
-                        for (let i = 0; i < rooms[21].objects.length; i++) {
-                            if (rooms[21].objects[i] === "GIRL") {
-                                rooms[21].objects.splice(i, 1);
-                                break;
-                            }
-                        }
-                        rooms[16].objects.push("GIRL");
-                        
-                        return "OK\n\nWHY AM I DOING THIS!?!?!\n\nTHE PREACHER TAKES $1000 AND WINKS!\nTHE GIRL GRABS $2000 AND SAYS 'MEET ME AT THE HONEYMOON SUITE! I'VE GOT CONNECTIONS TO GET A ROOM THERE!!";
-                    }
-                    return "NO GIRL!!";
-                }
-                return "NO WAY, WIERDO!!";
-            }
-            
-            // HAIL command
-            if (verb === "HAIL") {
-                if (noun === "TAXI" || noun === "CAB") {
-                    if (gameState.currentRoom === 4 || gameState.currentRoom === 11 || gameState.currentRoom === 22) {
-                        let destination = prompt(specialDescriptions["TAXI"] + "\n\nWhere to? (DISCO, CASINO, or BAR)");
-                        destination = destination.toUpperCase();
-                        if (destination === "DISCO") {
-                            gameState.currentRoom = 21;
-                            return lookAround();
-                        } else if (destination === "CASINO") {
-                            gameState.currentRoom = 13;
-                            return lookAround();
-                        } else if (destination === "BAR") {
-                            gameState.currentRoom = 3;
-                            return lookAround();
-                        }
-                        return "HUH? HAIL ANOTHER!";
-                    }
-                    return "I'M NOT ON A STREET, FOOL!!!";
-                }
-                return "WHO ARE YOU KIDDING? YOU'RE PULLING AT STRAWS, FOOL!";
-            }
-            
-            // BREAK/SMASH command
-            if (["BREAK", "SMASH"].includes(verb)) {
-                if (noun === "WINDOW" && gameState.currentRoom === 8) {
-                    if (gameState.objectLocations["HAMMER"] === "INVENTORY") {
-                        // Set an exit to room 7
-                        rooms[8].exits["EAST"] = 7;
-                        return "THE WINDOW SMASHES TO PIECES!";
-                    }
-                    return "LET ME SEE IF I HAVE A HAMMER";
-                }
-                return "IT WON'T BUDGE";
-            }
-            
-            // CUT command
-            if (verb === "CUT") {
-                if (noun === "ROPE" && gameState.gameFlags.girlTiedUp) {
-                    if (gameState.objectLocations["KNIFE"] === "INVENTORY") {
-                        gameState.gameFlags.girlTiedUp = false;
-                        return "I DO AND IT WORKED! THANKS!";
-                    }
-                    return "LET ME SEE IF I STILL HAVE THE KNIFE!";
-                }
-                return "TRY USING A KNIFE!!!";
-            }
-            
-            return "I DON'T KNOW HOW TO " + verb + " SOMETHING!";
-        }
-        
-        // Examine objects
-        function examineObject(noun) {
-            noun = noun.toUpperCase();
-            
-            // Special case for TV
-            if (noun === "TV" && gameState.currentRoom === 5) {
-                if (gameState.gameFlags.tv) {
-                    const channel = `TV CHANNEL ${gameState.gameFlags.tvChannel}`;
-                    if (specialDescriptions[channel]) {
-                        return specialDescriptions[channel];
-                    }
-                    return "STATIC.";
-                }
-                return "ONLY IF YOU TURN IT ON! SAY 'TV ON'";
-            }
-            
-            // Special cases for notable objects
-            if (noun === "GRAFITTI" && gameState.currentRoom === 2) {
-                return specialDescriptions["GRAFITTI"];
-            }
-            
-            if (noun === "NEWSPAPER" && gameState.objectLocations["NEWSPAPER"] === gameState.currentRoom) {
-                gameState.objectLocations["NEWSPAPER"] = "INVENTORY";
-                return specialDescriptions["NEWSPAPER"];
-            }
-            
-            if (noun === "MAGAZINE" && (gameState.objectLocations["MAGAZINE"] === gameState.currentRoom || gameState.objectLocations["MAGAZINE"] === "INVENTORY")) {
-                return specialDescriptions["MAGAZINE"];
-            }
-            
-            if (noun === "PEEP HOLE" && gameState.currentRoom === 18) {
-                return specialDescriptions["PEEP HOLE"];
-            }
-            
-            if (noun === "GIRL" && gameState.currentRoom === 21) {
-                return specialDescriptions["DISCO GIRL"];
-            }
-            
-            if (noun === "GIRL" && gameState.currentRoom === 26) {
-                return specialDescriptions["GIRL JACUZZI"];
-            }
-            
-            if (noun === "HOOKER" && gameState.currentRoom === 9) {
-                return specialDescriptions["HOOKER"];
-            }
-            
-            if (noun === "RING" && gameState.objectLocations["RING"] === gameState.currentRoom) {
-                gameState.objectLocations["RING"] = "INVENTORY";
-                return "I TAKE THE RING.";
-            }
-            
-            if (noun === "MIRROR" && gameState.currentRoom === 2) {
-                gameState.gameFlags.mirrorExamined = true;
-                return "THERE'S A PERVERT LOOKING BACK AT ME!!!";
-            }
-            
-            if (noun === "BUTTON" && gameState.currentRoom === 3) {
-                return "SAYS PUSH";
-            }
-            
-            if (noun === "DOOR" && gameState.currentRoom === 23) {
-                if (!gameState.gameFlags.doorUnlocked) {
-                    return "A SIGN SAYS 'ENTRY BY SHOWING PASSCARD- CLUB MEMBERS AND THEIR GUESTS ONLY!";
-                }
-                return "IT'S UNLOCKED";
-            }
-            
-            if (noun === "BILLBOARD" && gameState.currentRoom === 4) {
-                return "IT SAYS 'HAIL TAXI HERE'";
-            }
-            
-            if (noun === "CABINET" && gameState.currentRoom === 27) {
-                if (!gameState.gameFlags.cabinetReached) {
-                    return "IT'S TOO HIGH!";
-                }
-                gameState.objectLocations["PITCHER"] = 27;
-                return "I SEE SOMETHING!! A PITCHER.";
-            }
-            
-            if (noun === "CLOSET" && gameState.currentRoom === 29) {
-                if (!gameState.gameFlags.doorUnlocked) {
-                    return "IT'S CLOSED";
-                }
-                gameState.objectLocations["DOLL"] = 29;
-                return "I SEE SOMETHING!! AN INFLATABLE DOLL.";
-            }
-            
-            if (noun === "SINK" && gameState.currentRoom === 27) {
-                return "A SIGN SAYS 'WATER ON OR OFF TO OPERATE'";
-            }
-            
-            // Check if the object is in the current room or inventory
-            const objectInRoom = rooms[gameState.currentRoom].objects.includes(noun);
-            const objectInInventory = gameState.objectLocations[noun] === "INVENTORY";
-            
-            if (!objectInRoom && !objectInInventory) {
-                return "IT'S NOT HERE!!!!!";
-            }
-            
-            return "I SEE NOTHING SPECIAL";
-        }
-        
-        // Take object
-        function takeObject(noun) {
-            noun = noun.toUpperCase();
-            
-            // Check if the object is in the player's location
-            if (gameState.objectLocations[noun] === gameState.currentRoom) {
-                gameState.objectLocations[noun] = "INVENTORY";
-                return "OK";
-            }
-            
-            // Special case for taking pharmacy items
-            if ((noun === "RUBBER" || noun === "MAGAZINE") && gameState.currentRoom === 24) {
-                if (gameState.money < 1) {
-                    return "NO MONEY!!!";
-                }
-                gameState.money--;
-                gameState.objectLocations[noun] = "INVENTORY";
-                if (noun === "RUBBER") {
-                    return "HE TAKES $100 AND GIVES ME THE RUBBER";
-                } else {
-                    return "HE TAKES $100 AND GIVES ME THE MAGAZINE";
-                }
-            }
-            
-            // Special case for taking alcohol from the bar
-            if ((noun === "WHISKEY" || noun === "BEER") && gameState.currentRoom === 3) {
-                if (gameState.money < 1) {
-                    return "NO MONEY!!!";
-                }
-                gameState.money--;
-                if (noun === "WHISKEY") {
-                    gameState.gameFlags.whiskeySeen = true;
-                    gameState.objectLocations["WHISKEY"] = "INVENTORY";
-                } else {
-                    gameState.gameFlags.beerSeen = true;
-                    gameState.objectLocations["BEER"] = "INVENTORY";
-                }
-                return "I GIVE THE BARTENDER $100 AND HE PLACES IT ON THE BAR.";
-            }
-            
-            // Special case for stool
-            if (noun === "STOOL" && gameState.currentRoom === 27) {
-                gameState.gameFlags.cabinetReached = true;
-                return "OK";
-            }
-            
-            // Special case for tree and apple
-            if (noun === "TREE" && gameState.currentRoom === 22) {
-                if (gameState.objectLocations["APPLE"] !== "INVENTORY") {
-                    gameState.objectLocations["APPLE"] = 22;
-                    gameState.gameFlags.appleFound = true;
-                    return "I SEE SOMETHING!! AN APPLE.";
-                }
-                return "NOTHING ELSE ON THE TREE.";
-            }
-            
-            // Don't let the player take certain fixed objects
-            if (["DESK", "WASHBASIN", "MIRROR", "TOILET", "BUSINESSMAN", "BUTTON", "BARTENDER", "BIG DUDE", "FUNKY HOOKER", "BED", "PREACHER", "TV", "SLOT MACHINES", "CARDS", "DEALER", "BLONDE", "GIRL", "DOOR", "WAITRESS", "TABLE", "TELEPHONE", "CLOSET", "SINK", "CABINET", "ELEVATOR", "BUSHES", "WINDOW", "SIGN", "PLANT", "DISPLAY RACK", "PEEP HOLE", "TREE"].includes(noun)) {
-                return "I CAN'T DO THAT";
-            }
-            
-            return "I DON'T SEE IT HERE!!";
-        }
-        
-        // Drop object
-        function dropObject(noun) {
-            noun = noun.toUpperCase();
-            
-            if (gameState.objectLocations[noun] !== "INVENTORY") {
-                return "I DON'T HAVE IT!!";
-            }
-            
-            // Special case for giving flowers to the disco girl
-            if (noun === "FLOWERS" && gameState.currentRoom === 21) {
-                gameState.objectLocations["FLOWERS"] = null;
-                gameState.gameFlags.discoGirlGifts++;
-                if (gameState.gameFlags.discoGirlGifts >= 3) {
-                    return "SHE BLUSHES PROFUSELY AND PUTS THEM IN HER HAIR!\nSHE SAYS 'SEE YOU AT THE MARRIAGE CENTER!!";
-                }
-                return "SHE BLUSHES PROFUSELY AND PUTS THEM IN HER HAIR!";
-            }
-            
-            // Special case for giving ring to the disco girl
-            if (noun === "RING" && gameState.currentRoom === 21) {
-                gameState.objectLocations["RING"] = null;
-                gameState.gameFlags.discoGirlGifts++;
-                if (gameState.gameFlags.discoGirlGifts >= 3) {
-                    return "SHE BLUSHES AND PUTS IT IN HER PURSE.\nSHE SAYS 'SEE YOU AT THE MARRIAGE CENTER!!";
-                }
-                return "SHE BLUSHES AND PUTS IT IN HER PURSE.";
-            }
-            
-            // Special case for giving wine to the bum
-            if (noun === "WINE" && gameState.currentRoom === 22 && gameState.objectLocations["BUM"] !== null) {
-                gameState.objectLocations["WINE"] = null;
-                gameState.gameFlags.bumWineGiven = true;
-                gameState.objectLocations["KNIFE"] = 22;
-                return specialDescriptions["BUM STORY"];
-            }
-            
-            // Special case for giving wine to the honeymoon suite
-            if (noun === "WINE" && gameState.currentRoom === 16 && gameState.gameFlags.girlMarried) {
-                gameState.objectLocations["WINE"] = null;
-                gameState.gameFlags.wineGiven = true;
-                return "SHE SAYS 'LAY DOWN HONEY- LET ME GIVE YOU A SPECIAL SUPRISE!!\nI LAY DOWN AND SHE SAYS 'OK- NOW CLOSE YOUR EYES'. I CLOSE MY EYES AND SHE STARTS TO GO TO WORK ON ME..........";
-            }
-            
-            // Special case for giving apple to jacuzzi girl
-            if (noun === "APPLE" && gameState.currentRoom === 26) {
-                gameState.objectLocations["APPLE"] = null;
-                gameState.gameFlags.appleEaten = true;
-                return "SHE TAKES THE APPLE AND RAISES IT TO HER MOUTH. WITH AN OUTRAGEOUSLY INNOCENT LOOK SHE TAKES A SMALL BITE OUT OF IT.\nA SMILE COMES ACROSS HER FACE! SHE'S REALLY STARTING TO LOOK QUITE SEXY!!!!\nSHE WINKS AND LAYS BACK INTO THE JACUZZI";
-            }
-            
-            // Special case for giving pills to blonde
-            if (noun === "PILLS" && gameState.currentRoom === 19) {
-                gameState.objectLocations["PILLS"] = null;
-                return "THE BLONDE LOOKS AT THE PILLS AND SAYS 'THANKS!!! I LOVE THIS STUFF!'\nSHE TAKES A PILL..........HER NIPPLES START TO STAND UP! WOW!!!!\nSHE'S BREATHING HEAVILY....I HOPE SHE RAPES ME!!!!!\nSHE SAYS 'SO LONG!!! I'M GOING TO GO SEE MY BOYFRIEND!' SHE DISAPPEARS DOWN THE STAIRS........";
-            }
-            
-            // Otherwise, just drop it in the current room
-            gameState.objectLocations[noun] = gameState.currentRoom;
-            return "OK";
-        }
-        
-        // Use object
-        function useObject(noun) {
-            noun = noun.toUpperCase();
-            
-            if (gameState.objectLocations[noun] !== "INVENTORY") {
-                return "I DON'T HAVE IT!!";
-            }
-            
-            if (noun === "RUBBER") {
-                gameState.gameFlags.rubberWorn = true;
-                return "IT TICKLES!!!!";
-            }
-            
-            if (noun === "RADIO" && gameState.objectLocations["RADIO"] === "INVENTORY") {
-                gameState.gameFlags.radioListened = true;
-                return "AN ADVERTISEMENT SAYS 'CALL 555-0987 FOR ALL YOUR LIQUOR NEEDS!!!!";
-            }
-            
-            if (noun === "PASS" && gameState.currentRoom === 23) {
-                gameState.gameFlags.doorUnlocked = true;
-                rooms[23].exits["WEST"] = 24; // Add exit to pharmacy
-                return "A VOICE ASKS 'PASSCARD??' I SEARCH IN MY POCKETS AND I HAVE IT! THE DOOR OPENS!";
-            }
-            
-            if (noun === "CONTROLLER" && gameState.currentRoom === 5) {
-                if (gameState.gameFlags.tv) {
-                    return "THE TV IS ALREADY ON. CHOOSE A CHANNEL (1-9)";
-                }
-                gameState.gameFlags.tv = true;
-                return "THE TV TURNS ON. CHOOSE A CHANNEL (1-9)";
-            }
-            
-            if (noun === "ROPE" && (gameState.currentRoom === 7 || gameState.currentRoom === 10)) {
-                gameState.objectLocations["ROPE"] = null; // Use up the rope
-                return "OK";
-            }
-            
-            return "I DON'T KNOW HOW TO USE THAT HERE.";
-        }
-        
-        // Open object
-        function openObject(noun) {
-            noun = noun.toUpperCase();
-            
-            if (noun === "DESK" && gameState.currentRoom === 1) {
-                if (gameState.objectLocations["NEWSPAPER"] !== "INVENTORY") {
-                    gameState.objectLocations["NEWSPAPER"] = 1;
-                    return "OK\nI SEE SOMETHING!! A NEWSPAPER!";
-                }
-                return "OK\nTHERE'S NOTHING ELSE IN THE DESK.";
-            }
-            
-            if (noun === "CLOSET" && gameState.currentRoom === 29) {
-                if (gameState.objectLocations["DOLL"] !== "INVENTORY") {
-                    gameState.gameFlags.doorUnlocked = true;
-                    gameState.objectLocations["DOLL"] = 29;
-                    return "OK";
-                }
-                return "IT'S ALREADY OPEN!";
-            }
-            
-            if (noun === "WINDOW" && gameState.currentRoom === 8) {
-                return "WON'T BUDGE";
-            }
-            
-            if (noun === "DOOR" && gameState.currentRoom === 23) {
-                if (gameState.objectLocations["PASS"] === "INVENTORY") {
-                    gameState.gameFlags.doorUnlocked = true;
-                    rooms[23].exits["WEST"] = 24; // Add exit to pharmacy
-                    return "A VOICE ASKS 'PASSCARD??' I SEARCH IN MY POCKETS AND I HAVE IT! THE DOOR OPENS!";
-                }
-                return "A VOICE ASKS 'PASSCARD??' I SEARCH IN MY POCKETS AND I DON'T HAVE IT. THE DOOR REMAINS CLOSED.";
-            }
-            
-            if (noun === "CABINET" && gameState.currentRoom === 27) {
-                if (!gameState.gameFlags.cabinetReached) {
-                    return "I CAN'T REACH IT!!";
-                }
-                if (gameState.objectLocations["PITCHER"] !== "INVENTORY") {
-                    gameState.objectLocations["PITCHER"] = 27;
-                    return "IT'S ALREADY OPEN!";
-                }
-                return "THERE'S NOTHING ELSE IN THE CABINET.";
-            }
-            
-            return "UMMM..........................HUH??";
-        }
-        
-        // Push object
-        function pushObject(noun) {
-            noun = noun.toUpperCase();
-            
-            if (noun === "BUTTON" && gameState.currentRoom === 3) {
-                if (!gameState.gameFlags.barButtonPressed) {
-                    gameState.gameFlags.barButtonPressed = true;
-                    rooms[3].exits["EAST"] = 4; // Add exit to street outside
-                    return "A CURTAIN PULLS BACK!!";
-                }
-                return "NOTHING HAPPENS.";
-            }
-            
-            if (noun === "BUTTON" && gameState.currentRoom === 19) {
-                rooms[19].exits["EAST"] = 25; // Add exit to penthouse foyer
-                return specialDescriptions["ELEVATOR"];
-            }
-            
-            return "PUSHY CHUMP, EH???";
-        }
-        
-        // Buy object
-        function buyObject(noun) {
-            noun = noun.toUpperCase();
-            
-            if (gameState.money < 1) {
-                return "NO MONEY!!!";
-            }
-            
-            if ((noun === "WHISKEY" || noun === "SHOT") && gameState.currentRoom === 3) {
-                gameState.money--;
-                gameState.objectLocations["WHISKEY"] = "INVENTORY";
-                gameState.gameFlags.whiskeySeen = true;
-                return "I GIVE THE BARTENDER $100 AND HE PLACES IT ON THE BAR.";
-            }
-            
-            if (noun === "BEER" && gameState.currentRoom === 3) {
-                gameState.money--;
-                gameState.objectLocations["BEER"] = "INVENTORY";
-                gameState.gameFlags.beerSeen = true;
-                return "I GIVE THE BARTENDER $100 AND HE PLACES IT ON THE BAR.";
-            }
-            
-            if (noun === "WINE" && gameState.currentRoom === 21) {
-                gameState.money--;
-                gameState.objectLocations["WINE"] = "INVENTORY";
-                return "THE WAITRESS TAKES $100 AND SAYS SHE'LL RETURN\nPOOR SERVICE!";
-            }
-            
-            if (noun === "RUBBER" && gameState.currentRoom === 24) {
-                gameState.money--;
-                gameState.objectLocations["RUBBER"] = "INVENTORY";
-                return "THE MAN LEANS OVER THE COUNTER AND WHISPERS:\nWHAT COLOR? RED\nAND FOR A FLAVOR?? STRAWBERRY\nLUBRICATED OR NOT (Y/N)?? Y\nRIBBED (Y/N) Y\nHE YELLS- THIS PERVERT JUST BOUGHT A RED, STRAWBERRY-FLAVORED LUBRICATED, RIBBED RUBBER!!!!\n\nA LADY WALKS BY AND LOOKS AT ME IN DISGUST!!!!";
-            }
-            
-            if (noun === "MAGAZINE" && gameState.currentRoom === 24) {
-                gameState.money--;
-                gameState.objectLocations["MAGAZINE"] = "INVENTORY";
-                return "HE TAKES $100 AND GIVES ME THE MAGAZINE";
-            }
-            
-            return "SORRY....TEMPORARILY SOLD OUT";
-        }
-        
-        // Play object
-        function playObject(noun) {
-            noun = noun.toUpperCase();
-            
-            if (noun === "SLOTS" && gameState.currentRoom === 13) {
-                if (gameState.money < 1) {
-                    return "I'M BROKE!!!- THAT MEANS DEATH!!!!!!!!";
-                }
-                
-                // Simple slot machine game
-                const symbols = ["🍒", "🍊", "🍇", "🍋", "7️⃣", "💰"];
-                const result = [];
-                
-                for (let i = 0; i < 3; i++) {
-                    result.push(symbols[Math.floor(Math.random() * symbols.length)]);
-                }
-                
-                gameState.money--;
-                
-                if (result[0] === result[1] && result[1] === result[2]) {
-                    gameState.money += 15;
-                    return `${result.join(" | ")}\nTRIPLES!!!!!! YOU WIN $1500\nYOU HAVE $${gameState.money}00`;
-                } else if (result[0] === result[1] || result[1] === result[2] || result[0] === result[2]) {
-                    gameState.money += 3;
-                    return `${result.join(" | ")}\nA PAIR! YOU WIN $300\nYOU HAVE $${gameState.money}00`;
-                }
-                
-                return `${result.join(" | ")}\nYOU LOSE!\nYOU HAVE $${gameState.money}00`;
-            }
-            
-            if (noun === "21" && gameState.currentRoom === 14) {
-                // Simple blackjack game
-                alert("THIS WILL COST $100 EACH TIME\nYOU HAVE $" + gameState.money + "00\nWOULD YOU LIKE TO PLAY?");
-                
-                if (gameState.money < 1) {
-                    return "I'M BROKE!!!- THAT MEANS DEATH!!!!!!!!";
-                }
-                
-                const playerCards = [];
-                const dealerCards = [];
-                
-                // Deal initial cards
-                playerCards.push(dealCard());
-                dealerCards.push(dealCard());
-                playerCards.push(dealCard());
-                dealerCards.push(dealCard());
-                
-                let playerTotal = calculateTotal(playerCards);
-                let dealerTotal = calculateTotal(dealerCards);
-                
-                let result = `YOUR CARDS: ${playerCards.join(", ")}\nYOUR TOTAL: ${playerTotal}\n\nDEALER SHOWS: ${dealerCards[0]}\n`;
-                
-                // Check for blackjack
-                if (playerTotal === 21) {
-                    gameState.money += 5;
-                    return result + "YOU'VE GOT ***BLACKJACK***\nYOU WIN $500!\nYOU HAVE $" + gameState.money + "00";
-                }
-                
-                if (dealerTotal === 21) {
-                    gameState.money--;
-                    return result + "THE DEALER HAS ***BLACKJACK***\nYOU LOSE $100\nYOU HAVE $" + gameState.money + "00";
-                }
-                
-                // Player's turn
-                while (playerTotal < 21) {
-                    if (!confirm(result + "\nWOULD YOU LIKE A HIT?")) break;
-                    
-                    playerCards.push(dealCard());
-                    playerTotal = calculateTotal(playerCards);
-                    result = `YOUR CARDS: ${playerCards.join(", ")}\nYOUR TOTAL: ${playerTotal}\n\nDEALER SHOWS: ${dealerCards[0]}\n`;
-                    
-                    if (playerTotal > 21) {
-                        gameState.money--;
-                        return result + "BUSTED!\nYOU LOSE $100\nYOU HAVE $" + gameState.money + "00";
-                    }
-                }
-                
-                // Dealer's turn
-                result += `\nDEALER'S CARDS: ${dealerCards.join(", ")}\nDEALER TOTAL: ${dealerTotal}\n`;
-                
-                while (dealerTotal < 17) {
-                    dealerCards.push(dealCard());
-                    dealerTotal = calculateTotal(dealerCards);
-                    result = `YOUR CARDS: ${playerCards.join(", ")}\nYOUR TOTAL: ${playerTotal}\n\nDEALER'S CARDS: ${dealerCards.join(", ")}\nDEALER TOTAL: ${dealerTotal}\n`;
-                }
-                
-                if (dealerTotal > 21) {
-                    gameState.money++;
-                    return result + "DEALER BUSTS!\nYOU WIN $100\nYOU HAVE $" + gameState.money + "00";
-                }
-                
-                if (playerTotal > dealerTotal) {
-                    gameState.money++;
-                    return result + "YOU WIN $100!\nYOU HAVE $" + gameState.money + "00";
-                } else if (playerTotal === dealerTotal) {
-                    return result + "TIE!\nYOU HAVE $" + gameState.money + "00";
-                } else {
-                    gameState.money--;
-                    return result + "YOU LOSE $100\nYOU HAVE $" + gameState.money + "00";
-                }
-            }
-            
-            return "PLAYFUL BUGGER, EH??";
-        }
-        
-        // Interact with people
-        function interactWithPerson(noun) {
-            noun = noun.toUpperCase();
-            
-            if (noun === "HOOKER" && gameState.currentRoom === 9) {
-                if (gameState.gameFlags.hookerVisited) {
-                    return "SHE CAN'T TAKE IT ANY MORE!!!!!";
-                }
-                
-                if (!gameState.gameFlags.rubberWorn) {
-                    gameState.gameOver = true;
-                    gameState.deathMessage = "OH NO!!!! I'VE GOT THE DREADED ATOMIC CLAP!!! I'M DEAD!!";
-                    return gameState.deathMessage;
-                }
-                
-                gameState.gameFlags.hookerVisited = true;
-                gameState.score += 1;
-                return specialDescriptions["HOOKER SEX SUCCESS"];
-            }
-            
-            if (noun === "DOLL" && gameState.objectLocations["DOLL"] === "INVENTORY") {
-                if (!gameState.gameFlags.dollInflated) {
-                    return "INFLATE IT FIRST- STUPID!!!";
-                }
-                
-                gameState.objectLocations["DOLL"] = null; // It flies away
-                return specialDescriptions["INFLATABLE DOLL"];
-            }
-            
-            if (noun === "GIRL" && gameState.currentRoom === 26 && gameState.gameFlags.appleEaten) {
-                gameState.score += 1;
-                gameState.gameOver = true;
-                return specialDescriptions["JACUZZI GIRL SEX"];
-            }
-            
-            if (noun === "GIRL" && gameState.currentRoom === 16 && gameState.gameFlags.wineGiven) {
-                gameState.score += 1;
-                gameState.gameFlags.girlTiedUp = true;
-                return specialDescriptions["TIED UP"];
-            }
-            
-            if (noun === "GIRL" && gameState.currentRoom === 21) {
-                return "SHE SAYS 'GET ME SOME GIFTS FIRST!!!'";
-            }
-            
-            if (["BUSINESSMAN", "BARTENDER", "BIG DUDE", "WAITRESS", "DEALER", "BLONDE", "PREACHER"].includes(noun)) {
-                return "NO WAY!!! YOU'RE WIERD!!";
-            }
-            
-            return "PERVERT!";
-        }
-        
-        // Climb object
-        function climbObject(noun) {
-            noun = noun.toUpperCase();
-            
-            if (noun === "BUSHES" && gameState.currentRoom === 15) {
-                gameState.currentRoom = 28;
-                return lookAround();
-            }
-            
-            return "NOT MUCH TO CLIMB HERE.";
-        }
-        
-        // Helper function for blackjack
-        function dealCard() {
-            const value = Math.floor(Math.random() * 13) + 1;
-            
-            if (value === 1) return "A";
-            if (value === 11) return "J";
-            if (value === 12) return "Q";
-            if (value === 13) return "K";
-            
-            return value.toString();
-        }
-        
-        function calculateTotal(cards) {
-            let total = 0;
-            let aces = 0;
-            
-            for (const card of cards) {
-                if (card === "A") {
-                    total += 11;
-                    aces++;
-                } else if (card === "J" || card === "Q" || card === "K") {
-                    total += 10;
-                } else {
-                    total += parseInt(card);
-                }
-            }
-            
-            // Adjust for aces
-            while (total > 21 && aces > 0) {
-                total -= 10;
-                aces--;
-            }
-            
-            return total;
-        }
-        
-        // Initialize the game
-        let gameOutput = document.getElementById("game-container");
-        let commandInput = document.getElementById("command-input");
-        
-        function initialize() {
-            appendOutput("SOFTPORN ADVENTURE");
-            appendOutput("WRITTEN BY CHUCK BENTON");
-            appendOutput("COPYRIGHT 1981");
-            appendOutput("BLUE SKY SOFTWARE");
-            appendOutput("");
-            appendOutput("");
-            
-            appendOutput("SHOULD A SAVED GAME BE LOADED? (Y/N)");
-            appendOutput("(Just enter N for now - save feature not implemented)");
-            appendOutput("");
-            
-            // Force them to type N to start
-            const handleInitial = function(e) {
-                if (e.key === "Enter") {
-                    const command = commandInput.value.trim().toUpperCase();
-                    appendOutput("> " + command, "input-line");
-                    commandInput.value = "";
-                    
-                    if (command === "N") {
-                        commandInput.removeEventListener("keydown", handleInitial);
-                        commandInput.addEventListener("keydown", handleCommand);
-                        appendOutput("PLEASE WAIT");
-                        appendOutput("INITIALIZATION PHASE");
-                        
-                        setTimeout(() => {
-                            appendOutput(lookAround());
-                        }, 1000);
-                    } else {
-                        appendOutput("PLEASE ENTER N TO START A NEW GAME");
-                    }
-                }
-            };
-            
-            commandInput.addEventListener("keydown", handleInitial);
-        }
-        
-        function handleCommand(e) {
-            if (e.key === "Enter") {
-                const command = commandInput.value.trim();
-                appendOutput("> " + command, "input-line");
-                commandInput.value = "";
-                
-                if (command.length > 0) {
-                    const response = handleCommand(command);
-                    appendOutput(response);
-                }
-            }
-        }
-        
-        function appendOutput(text, className) {
-            const p = document.createElement("p");
-            p.textContent = text;
-            if (className) {
-                p.className = className;
-            }
-            gameOutput.appendChild(p);
-            gameOutput.scrollTop = gameOutput.scrollHeight;
-        }
-        
-        window.onload = initialize;
-    </script>
-</body>
-</html>
+        {/* Input area */}
+        <form onSubmit={handleInput} className="mt-4 flex items-center">
+          <div className="w-8 mr-2 text-pink-500">
+            <Terminal />
+          </div>
+          <input
+            type="text"
+            value={gameState.inputValue}
+            onChange={(e) => setGameState({...gameState, inputValue: e.target.value})}
+            className="flex-1 bg-black border-2 border-cyan-500 text-cyan-300 p-2 focus:outline-none focus:border-pink-500"
+            placeholder="WHAT SHALL I DO?"
+            style={{ textShadow: '0 0 5px #0ff' }}
+          />
+          <button 
+            type="submit" 
+            className="ml-2 bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-2 text-white font-bold hover:from-pink-600 hover:to-purple-700"
+          >
+            ENTER
+          </button>
+        </form>
+      </div>
+      
+      {/* Status bar */}
+      <div className="bg-purple-900 p-2 border-t-4 border-pink-500 flex justify-between">
+        <div className="text-cyan-400">SCORE: {gameState.score}/3</div>
+        <div className="text-cyan-400">MONEY: ${gameState.money/100}00</div>
+        <div className="text-pink-500">LOCATION: {gameState.currentLocation}</div>
+      </div>
+    </div>
+  );
+};
+
+export default NeonSoftpornAdventure;
