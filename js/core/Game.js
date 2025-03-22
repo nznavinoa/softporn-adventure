@@ -4,7 +4,7 @@
  */
 import eventBus from '../main.js';
 import { GameEvents } from './GameEvents.js';
-import { roomDescriptions, roomExits, initialRoomObjects, otherAreasDescriptions } from '../data/rooms.js';
+import { roomDescriptions, roomExits, initialRoomObjects } from '../data/rooms.js';
 import { objectNames, objectTypes } from '../data/objects.js';
 import { specialTexts, introText } from '../data/text.js';
 
@@ -20,6 +20,9 @@ export default class Game {
         
         // State flag to prevent event recursion
         this.gameStarted = false;
+        
+        // Prevent duplicate initialization
+        this.initializing = false;
         
         // Game state flags
         this.flags = {
@@ -98,21 +101,11 @@ export default class Game {
                 console.log("Game already started, ignoring duplicate event");
                 return;
             }
-            
-            // Additional game initialization steps can go here if needed
         });
         
         eventBus.subscribe(GameEvents.COMMAND_PROCESSED, (data) => {
             console.log("Game received COMMAND_PROCESSED event:", data);
             this.processCommand(data);
-        });
-
-        // FIX: Handle the no-load button click directly in the Game class
-        document.addEventListener('click', (event) => {
-            if (event.target.id === 'no-load') {
-                console.log("No Load button clicked - direct handler in Game.js");
-                this.initializeGame();
-            }
         });
     }
     
@@ -129,36 +122,46 @@ export default class Game {
             
             this.gameStarted = true;
             
+            // Clear any existing output
+            this.gameOutput = [];
+            
             // Display intro text
             this.addToGameDisplay(`<div class="message">
                 ${introText}
             </div>`);
             
-            // FIX: Force an update of the game display
-            this.updateGameDisplay();
-            
-            // Ask if a saved game should be loaded
-            this.addToGameDisplay(`<div class="system-message">SHOULD A SAVED GAME BE LOADED? <button id="no-load">N</button></div>`);
-            
-            // FIX: Force a direct update of the display again
-            this.updateGameDisplay();
+            // Use the dialog system instead of inline button
+            setTimeout(() => {
+                eventBus.publish(GameEvents.UI_SHOW_DIALOG, {
+                    title: "Load Game",
+                    content: "SHOULD A SAVED GAME BE LOADED?",
+                    buttons: [
+                        {
+                            text: "NO",
+                            id: "no-load-btn",
+                            callback: () => {
+                                console.log("No load button clicked in dialog");
+                                this.initializeGame();
+                            }
+                        },
+                        {
+                            text: "YES",
+                            id: "yes-load-btn",
+                            callback: () => {
+                                console.log("Yes load button clicked in dialog");
+                                // For now, we just initialize a new game
+                                this.initializeGame();
+                            }
+                        }
+                    ]
+                });
+            }, 500);
             
             // Directly publish game started event
             console.log("Publishing GAME_STARTED event");
             eventBus.publish(GameEvents.GAME_STARTED, {
                 timestamp: new Date().toISOString()
             });
-            
-            // FIX: Add a direct check to see if the no-load button is created
-            setTimeout(() => {
-                const noLoadBtn = document.getElementById('no-load');
-                console.log('No-load button exists after start:', !!noLoadBtn);
-                
-                if (!noLoadBtn) {
-                    console.warn("No-load button not found, forcing game initialization");
-                    this.initializeGame();
-                }
-            }, 500);
             
             // Publish UI refresh event
             eventBus.publish(GameEvents.UI_REFRESH, {
@@ -180,18 +183,50 @@ export default class Game {
         console.log("Game.initializeGame() method called");
         
         try {
-            this.addToGameDisplay(`<div class="message">
-                PLEASE WAIT
-                INITIALIZATION PHASE
-            </div>`);
+            // FIX: Prevent duplicate initialization
+            if (this.initializing) {
+                console.log("Game already initializing, ignoring duplicate call");
+                return;
+            }
             
-            // FIX: Force update the display immediately
-            this.updateGameDisplay();
+            this.initializing = true;
             
-            // FIX: Reduced timeout to make game more responsive
+            // Show initialization message in its own UI dialog so it's clearly visible
+            eventBus.publish(GameEvents.UI_SHOW_DIALOG, {
+                title: "Initializing Game",
+                content: "PLEASE WAIT<br>INITIALIZATION PHASE",
+                buttons: [] // No buttons - this dialog will auto-dismiss
+            });
+            
+            // Clear game display but keep the initialization message visible in the dialog
+            this.gameOutput = [];
+            
+            // Notify UI to update (clear the display)
+            eventBus.publish(GameEvents.DISPLAY_UPDATED, {
+                gameOutput: this.gameOutput
+            });
+            
+            // After a delay, hide the dialog and show the room
             setTimeout(() => {
-                // Display the starting room
-                this.displayRoom();
+                // Hide the initialization dialog
+                eventBus.publish(GameEvents.UI_HIDE_DIALOG, {});
+                
+                // Display the starting room - explicitly call with room ID 3 (bar)
+                this.displayRoom(3);
+                
+                // FIX: Force UI update to ensure room is displayed
+                eventBus.publish(GameEvents.DISPLAY_UPDATED, {
+                    gameOutput: this.gameOutput
+                });
+                
+                // Make sure the room data is also sent to update UI components
+                eventBus.publish(GameEvents.ROOM_CHANGED, {
+                    previousRoom: null,
+                    currentRoom: this.currentRoom,
+                    roomName: roomDescriptions[this.currentRoom] || `ROOM ${this.currentRoom}`,
+                    availableDirections: this.getAvailableDirections(),
+                    roomObjects: this.getRoomObjects()
+                });
                 
                 // Publish event to update UI
                 eventBus.publish(GameEvents.UI_REFRESH, {
@@ -202,9 +237,14 @@ export default class Game {
                     inventory: this.inventory
                 });
                 
+                // FIX: Reset initializing flag
+                this.initializing = false;
+                
                 console.log("Game initialized successfully");
-            }, 500);
+            }, 2000); // Longer delay to ensure the message is visible
         } catch (error) {
+            // FIX: Reset initializing flag on error
+            this.initializing = false;
             console.error("Error initializing game:", error);
             this.addToGameDisplay(`<div class="message">ERROR INITIALIZING GAME. PLEASE REFRESH.</div>`);
         }
@@ -217,9 +257,6 @@ export default class Game {
             
             this.gameOutput.push({ content, className });
             
-            // FIX: Directly update the DOM
-            this.updateGameDisplay();
-            
             // Notify UI to update
             eventBus.publish(GameEvents.DISPLAY_UPDATED, {
                 newContent: { content, className },
@@ -227,37 +264,6 @@ export default class Game {
             });
         } catch (error) {
             console.error("Error adding to game display:", error);
-        }
-    }
-    
-    // FIX: Add method to directly update the game display
-    updateGameDisplay() {
-        try {
-            const gameDisplay = document.getElementById('game-display');
-            if (!gameDisplay) {
-                console.error("Cannot update game display: Element not found");
-                return;
-            }
-            
-            // Clear previous content
-            gameDisplay.innerHTML = "";
-            
-            // Add all output
-            this.gameOutput.forEach(output => {
-                const div = document.createElement("div");
-                div.innerHTML = output.content;
-                if (output.className) {
-                    div.className = output.className;
-                }
-                gameDisplay.appendChild(div);
-            });
-            
-            // Scroll to bottom
-            gameDisplay.scrollTop = gameDisplay.scrollHeight;
-            
-            console.log("Game display updated directly");
-        } catch (error) {
-            console.error("Error updating game display:", error);
         }
     }
     
@@ -312,24 +318,38 @@ export default class Game {
     }
     
     // Display current room
-    displayRoom() {
+    displayRoom(roomId = null) {
         try {
+            // If a room ID is provided, update current room
+            if (roomId !== null) {
+                this.currentRoom = roomId;
+            }
+            
             console.log("Displaying room:", this.currentRoom);
             
-            // FIX: Don't clear the game output completely, just add a separator
-            this.addToGameDisplay(`<div style="border-top: 1px solid #01cdfe; margin: 10px 0;"></div>`);
+            // Always clear the game output before showing a room
+            // This ensures we don't get duplicate room information
+            this.gameOutput = [];
             
             // Display room name
             const roomName = roomDescriptions[this.currentRoom] || `ROOM ${this.currentRoom}`;
+            console.log("Room name to display:", roomName);
+            
+            // Add room title with full HTML
             this.addToGameDisplay(`<div class="room-title">${roomName}</div>`);
             
-            // Get room description
+            // Get room description and verify data
             const exitInfo = roomExits[this.currentRoom] || [this.currentRoom, []];
-            const exitType = exitInfo[0] || "";
-            const exitDesc = otherAreasDescriptions[exitType] || "NOWHERE";
+            console.log("Exit info:", exitInfo);
+            
+            let exitType = "NOWHERE";
+            if (exitInfo && exitInfo[0]) {
+                // Try to get the text description
+                exitType = roomExits[this.currentRoom][0] || "NOWHERE";
+            }
             
             // Display available exits
-            this.addToGameDisplay(`<div class="directions">OTHER AREAS ARE: ${exitDesc}</div>`);
+            this.addToGameDisplay(`<div class="directions">OTHER AREAS ARE: ${exitType}</div>`);
             
             // Display items in the room
             if (this.roomObjects[this.currentRoom] && this.roomObjects[this.currentRoom].length > 0) {
@@ -342,20 +362,13 @@ export default class Game {
                 this.addToGameDisplay(`<div class="items">ITEMS IN SIGHT ARE: NOTHING AT ALL!!!!!</div>`);
             }
             
-            // FIX: Force updating the display
-            this.updateGameDisplay();
+            // Log the current game output for debugging
+            console.log("Current game output:", JSON.stringify(this.gameOutput));
             
-            // Notify UI to update
-            eventBus.publish(GameEvents.ROOM_CHANGED, {
-                previousRoom: null, // We don't track previous room yet
-                currentRoom: this.currentRoom,
-                roomName: roomName,
-                availableDirections: this.getAvailableDirections(),
-                roomObjects: this.getRoomObjects()
+            // FIX: Force a UI refresh to make sure the room info is displayed
+            eventBus.publish(GameEvents.DISPLAY_UPDATED, {
+                gameOutput: this.gameOutput
             });
-            
-            // FIX: Add debug log for verification
-            console.log(`Room ${this.currentRoom} (${roomName}) displayed successfully`);
         } catch (error) {
             console.error("Error displaying room:", error);
             this.addToGameDisplay(`<div class="message">ERROR DISPLAYING ROOM.</div>`);

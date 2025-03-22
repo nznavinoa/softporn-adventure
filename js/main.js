@@ -24,9 +24,6 @@ import * as textData from './data/text.js';
 // Create event bus instance for module communication
 const eventBus = new EventBus();
 
-// FIX: Enable debug mode by default
-eventBus.setDebugMode(true);
-
 // Export event bus for modules to use
 export default eventBus;
 
@@ -64,13 +61,11 @@ document.addEventListener('DOMContentLoaded', function() {
   try {
     console.log("DOM Content Loaded - Initializing game components");
     
-    // FIX: Add check for intro screen
-    const introScreen = document.getElementById('intro-screen');
-    if (introScreen) {
-      console.log("Intro screen found, waiting for user to start game");
-    } else {
-      console.warn("Intro screen not found, game might start immediately");
-    }
+    // Set debug mode for development
+    eventBus.setDebugMode(true);
+    
+    // Create image loader
+    imageLoader = new ImageLoader();
     
     // Initialize components with proper order to avoid circular dependencies
     initializeComponents();
@@ -80,14 +75,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (startButton) {
       startButton.addEventListener('click', function() {
         console.log("Start Game button clicked");
-        
-        // FIX: Better error handling for intro screen
         const introScreen = document.getElementById('intro-screen');
         if (introScreen) {
           introScreen.style.display = 'none';
-          console.log("Intro screen hidden");
-        } else {
-          console.warn("Intro screen element not found");
         }
         
         if (game) {
@@ -97,17 +87,6 @@ document.addEventListener('DOMContentLoaded', function() {
           try {
             // Start the game
             game.start();
-            
-            // FIX: Check for start success after a short delay
-            setTimeout(() => {
-              // Verify the game display is showing content
-              const gameDisplay = document.getElementById('game-display');
-              if (gameDisplay && gameDisplay.children.length === 0) {
-                console.warn("Game display appears empty after start, forcing initialization");
-                game.initializeGame();
-              }
-            }, 1000);
-            
           } catch (error) {
             console.error("Error during game start:", error);
             // Display error to user
@@ -123,25 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error("Start Game button not found in the DOM");
     }
     
-    // FIX: Add direct event listener for no-load button
-    document.addEventListener('click', function(event) {
-      if (event.target.id === 'no-load') {
-        console.log("No Load button clicked - main.js handler");
-        if (game) {
-          game.initializeGame();
-        }
-      }
-    });
-    
     console.log('Softporn Adventure - 80s Neon Edition initialization complete!');
-    
-    // FIX: Add console commands for testing
-    window.debugGame = {
-      startGame: () => game.start(),
-      initGame: () => game.initializeGame(),
-      displayRoom: () => game.displayRoom()
-    };
-    console.log("Debug commands available via window.debugGame");
     
   } catch (error) {
     console.error('Error initializing game:', error);
@@ -151,29 +112,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Display fatal error to user
 function showFatalError(message) {
-  console.error("FATAL ERROR:", message);
-  
   const errorMessage = document.createElement('div');
   errorMessage.className = 'error-message';
-  errorMessage.style.position = 'fixed';
-  errorMessage.style.top = '50%';
-  errorMessage.style.left = '50%';
-  errorMessage.style.transform = 'translate(-50%, -50%)';
-  errorMessage.style.background = 'rgba(0,0,0,0.9)';
-  errorMessage.style.padding = '20px';
-  errorMessage.style.border = '2px solid #ff71ce';
-  errorMessage.style.color = 'white';
-  errorMessage.style.zIndex = '9999';
-  errorMessage.style.maxWidth = '80%';
-  errorMessage.style.textAlign = 'center';
-  
   errorMessage.innerHTML = `
-    <h2 style="color: #ff71ce; margin-top: 0;">Error Loading Game</h2>
+    <h2>Error Loading Game</h2>
     <p>${message}</p>
-    <button style="background: #01cdfe; border: none; color: white; padding: 10px 20px; margin-top: 15px; cursor: pointer;" 
-            onclick="window.location.reload()">Reload Page</button>
   `;
-  
   document.body.appendChild(errorMessage);
 }
 
@@ -181,64 +125,33 @@ function showFatalError(message) {
 function initializeComponents() {
   console.log("Initializing components...");
   
-  try {
-    // FIX: Initialize image loader first
-    imageLoader = new ImageLoader();
-    console.log("Image loader created");
-    
-    // Create game instance first
-    game = new Game();
-    console.log("Game instance created");
-    
-    // Create core components
-    commandParser = new CommandParser();
-    saveManager = new SaveManager(game);
-    
-    // Create UI components
-    roomDisplay = new RoomDisplay(eventBus, imageLoader, roomData, objectData);
-    commandInput = new CommandInput(eventBus, {}, objectData);
-    uiManager = new UIManager(eventBus, roomDisplay, commandInput, imageLoader);
-    
-    // Create feature modules
-    navigation = new Navigation(game);
-    inventory = new Inventory(game);
-    objectInteraction = new ObjectInteraction(game);
-    specialEvents = new SpecialEvents(game);
-    
-    // Initialize UI elements (even though UIManager does this in constructor now)
-    uiManager.setupUI();
-    
-    // Publish initialization event after all components are created
-    console.log("Publishing game initialized event");
-    eventBus.publish(GameEvents.GAME_INITIALIZED, {
-      timestamp: new Date().toISOString()
-    });
-    
-    // FIX: Verify DOM elements exist
-    verifyDomElements();
-    
-  } catch (error) {
-    console.error("Error during component initialization:", error);
-    throw new Error(`Component initialization failed: ${error.message}`);
-  }
-}
-
-// FIX: Add function to verify DOM elements
-function verifyDomElements() {
-  const critical = [
-    'game-display',
-    'location-image',
-    'location-name',
-    'command-input'
-  ];
+  // Create game instance first
+  game = new Game();
+  console.log("Game instance created");
   
-  const missing = critical.filter(id => !document.getElementById(id));
+  // Create core components
+  commandParser = new CommandParser();
+  saveManager = new SaveManager(game);
   
-  if (missing.length > 0) {
-    console.error(`Missing critical DOM elements: ${missing.join(', ')}`);
-  } else {
-    console.log("All critical DOM elements found");
-  }
+  // Create UI components
+  roomDisplay = new RoomDisplay(eventBus, imageLoader, roomData, objectData);
+  commandInput = new CommandInput(eventBus, {}, objectData);
+  uiManager = new UIManager(eventBus, roomDisplay, commandInput, imageLoader);
+  
+  // Create feature modules
+  navigation = new Navigation(game);
+  inventory = new Inventory(game);
+  objectInteraction = new ObjectInteraction(game);
+  specialEvents = new SpecialEvents(game);
+  
+  // Initialize UI elements
+  uiManager.setupUI();
+  
+  // Publish initialization event after all components are created
+  console.log("Publishing game initialized event");
+  eventBus.publish(GameEvents.GAME_INITIALIZED, {
+    timestamp: new Date().toISOString()
+  });
 }
 
 // Export key components for testing

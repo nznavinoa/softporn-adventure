@@ -177,6 +177,7 @@ export default class Navigation {
     
     /**
      * Display room after movement
+     * Note: This method no longer publishes a ROOM_CHANGED event to avoid duplication
      */
     displayRoom() {
         try {
@@ -205,15 +206,6 @@ export default class Navigation {
             } else {
                 this.game.addToGameDisplay(`<div class="items">ITEMS IN SIGHT ARE: NOTHING AT ALL!!!!!</div>`);
             }
-            
-            // Notify UI of room change with complete data
-            eventBus.publish(GameEvents.ROOM_CHANGED, {
-                previousRoom: this.game.previousRoom || null,
-                currentRoom: this.game.currentRoom,
-                roomName: roomName,
-                availableDirections: this.getAvailableDirections(),
-                roomObjects: this.game.getRoomObjects()
-            });
             
             // Handle special room behaviors
             this.handleSpecialRooms();

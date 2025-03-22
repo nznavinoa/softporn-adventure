@@ -34,11 +34,11 @@ export default class UIManager {
     // Available directions in current room
     this.availableDirections = [];
     
+    // FIX: Flag to prevent duplicate updates
+    this.isUpdating = false;
+    
     // Subscribe to events
     this.subscribeToEvents();
-    
-    // FIX: Initialize UI elements immediately
-    this.setupUI();
     
     console.log("UIManager initialized");
   }
@@ -97,8 +97,7 @@ export default class UIManager {
     
     this.eventBus.subscribe(GameEvents.GAME_INITIALIZED, () => {
       console.log("UIManager received GAME_INITIALIZED event");
-      // FIX: Don't call setupUI again, just log
-      console.log("Game initialization detected by UIManager");
+      this.setupUI();
     });
     
     this.eventBus.subscribe(GameEvents.DISPLAY_TEXT, (data) => {
@@ -108,7 +107,10 @@ export default class UIManager {
     
     this.eventBus.subscribe(GameEvents.UI_REFRESH, (data) => {
       console.log("UIManager received UI_REFRESH event:", data);
-      this.refreshUI(data.type);
+      // FIX: Prevent duplicate refresh operations
+      if (!this.isUpdating) {
+        this.refreshUI(data.type);
+      }
     });
     
     this.eventBus.subscribe(GameEvents.UI_SHOW_DIALOG, (data) => {
@@ -124,7 +126,10 @@ export default class UIManager {
     this.eventBus.subscribe(GameEvents.DISPLAY_UPDATED, (data) => {
       console.log("UIManager received DISPLAY_UPDATED event");
       if (data.newContent) {
-        this.updateGameDisplay();
+        // FIX: Prevent duplicate update operations
+        if (!this.isUpdating) {
+          this.updateGameDisplay();
+        }
       }
     });
     
@@ -136,12 +141,6 @@ export default class UIManager {
       
       // Update direction buttons
       this.updateDirectionButtons();
-      
-      // FIX: Update room display
-      if (this.roomDisplay) {
-        console.log("Triggering room display update from UIManager");
-        this.roomDisplay.displayRoom(data.currentRoom);
-      }
     });
     
     console.log("UIManager event listeners set up");
@@ -172,19 +171,22 @@ export default class UIManager {
   updateGameDisplay() {
     console.log("UIManager.updateGameDisplay() called");
     
+    // FIX: Set updating flag to prevent duplicate updates
+    if (this.isUpdating) {
+      console.log("Already updating game display, skipping duplicate update");
+      return;
+    }
+    
+    this.isUpdating = true;
+    
     if (!this.gameDisplay) {
       console.error("Game display element not available");
       this.gameDisplay = document.getElementById('game-display');
       if (!this.gameDisplay) {
         console.error("Game display element still not found");
+        this.isUpdating = false;
         return;
       }
-    }
-    
-    // FIX: Check if game display is visible
-    const displayStyle = window.getComputedStyle(this.gameDisplay);
-    if (displayStyle.display === 'none') {
-      console.warn("Game display element is hidden by CSS");
     }
     
     // Clear previous content
@@ -203,12 +205,12 @@ export default class UIManager {
     // Scroll to bottom
     this.gameDisplay.scrollTop = this.gameDisplay.scrollHeight;
     
-    // FIX: Check if any buttons were created
-    const buttons = this.gameDisplay.querySelectorAll('button');
-    console.log(`Game display updated with ${buttons.length} buttons`);
-    buttons.forEach((btn, i) => {
-      console.log(`Button ${i+1} ID: ${btn.id}, Text: ${btn.textContent}`);
-    });
+    console.log("Game display updated");
+    
+    // FIX: Clear updating flag after a short delay
+    setTimeout(() => {
+      this.isUpdating = false;
+    }, 50);
   }
   
   /**
@@ -217,6 +219,14 @@ export default class UIManager {
    */
   refreshUI(component) {
     console.log("UIManager.refreshUI() called for:", component);
+    
+    // FIX: Set updating flag to prevent duplicate updates
+    if (this.isUpdating) {
+      console.log("Already updating UI, skipping duplicate refresh");
+      return;
+    }
+    
+    this.isUpdating = true;
     
     // Refresh specific component or all UI
     if (component === 'all' || component === 'gameDisplay') {
@@ -234,11 +244,10 @@ export default class UIManager {
       }
     }
     
-    // FIX: Check for intro screen and make sure it's not blocking the game
-    const introScreen = document.getElementById('intro-screen');
-    if (introScreen && window.getComputedStyle(introScreen).display !== 'none') {
-      console.warn("Intro screen is still visible and may be blocking the game");
-    }
+    // FIX: Clear updating flag after a short delay
+    setTimeout(() => {
+      this.isUpdating = false;
+    }, 50);
   }
   
   /**
@@ -255,13 +264,6 @@ export default class UIManager {
         console.error("Still cannot find direction buttons container");
         return;
       }
-    }
-    
-    // FIX: Check if we already have a click handler on the container
-    const hasClickHandler = this.directionButtons.hasAttribute('data-has-click-handler');
-    if (hasClickHandler) {
-      console.log("Direction buttons already have click handler, skipping setup");
-      return;
     }
     
     // Clear existing buttons
@@ -307,10 +309,6 @@ export default class UIManager {
       this.directionButtons.appendChild(button);
     });
     
-    // FIX: Add debounce to prevent multiple rapid clicks
-    let lastClickTime = 0;
-    const CLICK_DEBOUNCE = 300; // ms
-    
     // Set up event handling for all buttons using event delegation
     this.directionButtons.addEventListener('click', (event) => {
       const button = event.target.closest('button');
@@ -318,16 +316,6 @@ export default class UIManager {
       
       const command = button.dataset.command;
       if (!command) return;
-      
-      // FIX: Debounce rapid clicks
-      const now = Date.now();
-      if (now - lastClickTime < CLICK_DEBOUNCE) {
-        console.log("Debounced click:", command);
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-      lastClickTime = now;
       
       console.log("Direction/action button clicked:", command);
       
@@ -339,14 +327,7 @@ export default class UIManager {
       
       // Process the command
       this.eventBus.publish(GameEvents.COMMAND_RECEIVED, command);
-      
-      // FIX: Prevent event propagation to avoid multiple handlers
-      event.preventDefault();
-      event.stopPropagation();
     });
-    
-    // FIX: Mark the container as having a click handler
-    this.directionButtons.setAttribute('data-has-click-handler', 'true');
     
     console.log("Direction buttons setup complete");
   }
