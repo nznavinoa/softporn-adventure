@@ -3,29 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Softporn Adventure</title>
+    <title>Softporn Adventure 2025</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KN6D6VC6XQ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-KN6D6VC6XQ');
+    </script>
     <style>
         body {
             background-color: #000;
             color: #33ff33;
             font-family: 'Courier New', monospace;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 0;
+            padding: 10px;
             line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .game-wrapper {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex: 1;
+            flex-wrap: wrap;
         }
         
         #game-container {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+            height: 600px;
             border: 1px solid #33ff33;
-            min-height: 400px;
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 10px;
             overflow-y: auto;
-            height: 400px;
+            background-color: #000;
+            box-sizing: border-box;
+        }
+
+        /* Custom scrollbar styling */
+        #game-container::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        #game-container::-webkit-scrollbar-track {
+            background: #000;
+            border: 1px solid #33ff33;
+        }
+
+        #game-container::-webkit-scrollbar-thumb {
+            background: #33ff33;
+            border: 1px solid #33ff33;
+            border-radius: 6px;
+        }
+
+        #game-container::-webkit-scrollbar-thumb:hover {
+            background: #4dff4d;
+        }
+        
+        #image-container {
+            flex: 2;
+            min-width: 300px;
+            max-width: 780px;
+            height: 600px;
+            border: 1px solid #33ff33;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-color: #000;
+            box-sizing: border-box;
+            position: relative; /* Added for positioning the loading overlay */
+        }
+        
+        #room-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        /* Loading overlay styles */
+        #loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        #loading-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .loader {
+            width: 80px;
+            height: 80px;
+            border: 5px solid #33ff33;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1.5s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .neon-text {
+            color: #fff;
+            text-shadow: 
+                0 0 5px #33ff33,
+                0 0 10px #33ff33,
+                0 0 20px #33ff33;
+            font-size: 18px;
+            letter-spacing: 2px;
+            text-align: center;
+            margin: 10px 0;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                opacity: 0.5;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.5;
+            }
+        }
+        
+        #loading-message {
+            max-width: 80%;
+            padding: 0 20px;
+        }
+        
+        #loading-progress {
+            margin-top: 10px;
+            font-size: 14px;
         }
         
         #command-input {
             width: 100%;
+            max-width: 1200px;
             padding: 10px;
             background-color: #000;
             border: 1px solid #33ff33;
@@ -33,20 +180,52 @@
             font-family: 'Courier New', monospace;
             font-size: 16px;
             outline: none;
+            margin: 20px auto;
+            display: block;
+            box-sizing: border-box;
+        }
+        
+        #available-commands {
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+            border: 1px solid #33ff33;
+            background-color: #000;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        
+        .commands-title {
+            color: #33ff33;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #33ff33;
+            padding-bottom: 5px;
+        }
+        
+        .commands-content {
+            color: #33ff33;
+            font-family: 'Courier New', monospace;
+            line-height: 1.5;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
         }
         
         .title {
             text-align: center;
-            color: #fff;
-            font-size: 24px;
-            margin-bottom: 20px;
+            color: #33ff33;
+            font-size: clamp(20px, 4vw, 24px);
+            margin-bottom: 10px;
         }
         
         .copyright {
             text-align: center;
             color: #33ff33;
             font-size: 12px;
-            margin-bottom: 20px;
+            margin-top: 20px;
+            padding: 10px;
+            border-top: 1px solid #33ff33;
         }
         
         .blink {
@@ -78,15 +257,77 @@
             background-color: #33ff33;
             color: #000;
         }
+        
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            .game-wrapper {
+                flex-direction: column;
+            }
+
+            #game-container, #image-container {
+                width: 100%;
+                max-width: 100%;
+                height: 400px;
+            }
+
+            .commands-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+
+            #game-container, #image-container {
+                height: 300px;
+            }
+
+            .title {
+                font-size: 18px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="title">SOFTPORN ADVENTURE</div>
-    <div class="copyright">WRITTEN BY CHUCK BENTON<br>COPYRIGHT 1981<br>BLUE SKY SOFTWARE</div>
+    <div class="title">SOFTPORN ADVENTURE 2025</div>
     
-    <div id="game-container"></div>
+    <div class="game-wrapper">
+        <div id="game-container"></div>
+        <div id="image-container">
+            <img id="room-image" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iIzAwMCIvPjx0ZXh0IHg9IjQwMCIgeT0iMzAwIiBmb250LWZhbWlseT0iQ291cmllciBOZXciIGZvbnQtc2l6ZT0iMzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMzM2ZmMzMiPlNvZnRwb3JuIEFkdmVudHVyZTwvdGV4dD48dGV4dCB4PSI0MDAiIHk9IjM0MCIgZm9udC1mYW1pbHk9IkNvdXJpZXIgTmV3IiBmb250LXNpemU9IjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMzNmZjMzIj5Mb2FkaW5nIFJvb20gSW1hZ2UuLi48L3RleHQ+PC9zdmc+" alt="Game room scene">
+            <div id="loading-overlay">
+                <span class="loader"></span>
+                <div id="loading-message" class="neon-text">GENERATING IMAGE...</div>
+                <div id="loading-progress" class="neon-text">RENDERING 3D SCENE</div>
+            </div>
+        </div>
+    </div>
     
     <input type="text" id="command-input" placeholder="What shall I do?" autofocus>
+    
+    <div id="available-commands">
+        <div class="commands-title">AVAILABLE COMMANDS:</div>
+        <div class="commands-content"></div>
+    </div>
+    
+    <div class="footer">
+        <a href="https://x.com/nznavinoa">Follow me on X</a>
+        <p>Page visits: <span id="visitCount">0</span></p>
+    </div>
+
+    <div class="copyright">
+        WRITTEN BY CHUCK BENTON<br>
+        COPYRIGHT 1981<br>
+        BLUE SKY SOFTWARE
+    </div>
     
     <script>
         // Game state
@@ -349,7 +590,7 @@
             "TV CHANNEL 2": "IT'S 'THE PRICE IS FRIGHT!!!!!!' 'AND NOW FOR OUR FAVORITE HOST..........HAUNTY MAULE!!!!!!!!!!' HAUNTY JUMPS UP ON THE STAGE- HE ASKS 'AND WHO'S OUR FIRST LUCKY CONTESTANT?' THE ANNOUNCER POINTS OUT A LADY...THE CROWD SCREAMS IN ECSTACY AS SHE'S DRAGGED TO THE STAGE............",
             "TV CHANNEL 3": "CAPTAIN JERK LOOKS AT THE DOOR FROM WHICH BEHIND THE NOISE IS COMING.\nTHROWING OPEN THE DOOR- HIS FACE TURNS A DEEP RED!!!!!!!!!\nHE SAYS 'SCOTTY! WHAT ARE YOU DOING?? SCOTTY REPLIES 'BUT CAPTAIN!?!? MY GIRL AND I- WE'RE ENGAGED!!!!\nJERK COMMANDS 'WELL THEN DISENGAGE!'....AS THE STARSHIP THRUSTED FORWARD........PENETRATING DEEPER INTO SPACE..........",
             "TV CHANNEL 4": "THE NEWS!!! TODAY THE PRIME RATE WAS RAISED ONCE AGAIN...TO 257%! THIS DOES NOT COME NEAR THE RECORD SET IN 1996- WHEN IT BROKE THE 1000% MARK.........................\nTHE BIRTH RATE HAS TAKEN A DRAMATIC FALL....THIS IS DUE TO THE INCREASED USAGE OF COMPUTERS AS SEXUAL PARTNERS..\nHOWEVER....RAPES OF INNOCENT PEOPLE ARE ON THE INCREASE! AND WHO IS THE RAPIST?? COMPUTERIZED BANKING MACHINES LEAD THE LIST....FOLLOWED BY HOME COMPUTERS.....",
-            "TV CHANNEL 5": "MR. RODJERKS JUMPS UP WITH HIS BIG SNEAKERS AND SAYS IN HIS CHEERY VOICE.. GUESS WHAT- BOYS AND GIRLS?????? TODAY WE'RE GOING TO LEARN ABOUT SUCKERS!!\nSUSIE...SEE THE LOLLY-POP???? CAN YOU STICK IT IN YOUR MOUTH??? THAT'S RIGHT!\nTHAT'S A NICE LOLLY-POP....NICE AND HARD RIGHT?!?!?!?.................",
+            "TV CHANNEL 5": "MR. RODJERKS JUMPS UP WITH HIS BIG SNEAKERS AND SAYS IN HIS CHEERY VOICE.. GUESS WHAT- BOYS AND GIRLS????? TODAY WE'RE GOING TO LEARN ABOUT SUCKERS!!\nSUSIE...SEE THE LOLLY-POP???? CAN YOU STICK IT IN YOUR MOUTH??? THAT'S RIGHT!\nTHAT'S A NICE LOLLY-POP....NICE AND HARD RIGHT?!?!?!?.................",
             "TV CHANNEL 6": "CABLE TV!!!!!!!!\nTHERE SHOWING THE KINKIEST X-RATED MOVIES!!!!!!! THIS ONE'S TITLED 'DEEP NOSTRIL'.\nTHE PIMP LIKES THIS ONE!!!!!!\nHE'S ENGROSSED IN THE ACTION HE SEES!!!! SEEMS DISTRACTED.................",
             "TAXI": "A TAXI PULLS UP AND SCREECHES TO A HALT!\nI GET IN THE BACK AND SIT DOWN.\nA SIGN SAYS 'WE SERVICE 3 DESTINATIONS. WHEN ASKED- PLEASE SPECIFY- DISCO.......CASINO....OR BAR.\nTHE DRIVER TURNS AND ASKS 'WHERE TO MAC??'",
             "ELEVATOR": "THE ELEVATOR DOORS OPEN....I GET IN.\nAS THE DOORS CLOSE MUSIC STARTS PLAYING-IT'S THE USUAL ELEVATOR STUFF...BORING!\nWE START TO MOVE.....AFTER A FEW SECONDS THE ELEVATOR STOPS.\nTHE DOORS OPEN AND I GET OUT.",
@@ -362,8 +603,10 @@
             "PILLS": "THIS STUFF IS GOOD! I'M BREATHING HEAVILY- I'VE NEVER BEEN THIS HORNY!!!\nI'VE JUST GOT TO DO SOMETHING!................................................\nAH...THERE GOES A FEMALE GERMAN SHEPARD! THAT GIVES ME AN IDEA!................\nKINKY DOG!!!!!! CHEWED ME TO DEATH!!!"
         };
 
-        // Command handler
-        function handleCommand(command) {
+        // Command processor
+        function processCommand(command) {
+            console.log("Processing command:", command); // Debug log
+            
             if (gameState.gameOver) {
                 return "GAME OVER. REFRESH THE PAGE TO START AGAIN.";
             }
@@ -396,7 +639,8 @@
             }
             
             // Handle look command
-            if (command === "LOOK") {
+            if (command === "LOOK" || command === "L") {
+                console.log("Executing LOOK command"); // Debug log
                 return lookAround();
             }
             
@@ -425,16 +669,352 @@
             return "HUH?";
         }
         
+        // Command event handler
+        function handleCommandInput(e) {
+            if (e.key === "Enter") {
+                const command = commandInput.value.trim();
+                appendOutput("> " + command, "input-line");
+                commandInput.value = "";
+                
+                if (command.length > 0) {
+                    const response = processCommand(command);
+                    console.log("Command response:", response); // Debug log
+                    appendOutput(response);
+                }
+            }
+        }
+        
+        // Initialize the game
+        let gameOutput = document.getElementById("game-container");
+        let commandInput = document.getElementById("command-input");
+        
+        // Add output to the game container
+        function appendOutput(text, className) {
+            const p = document.createElement("p");
+            p.textContent = text;
+            if (className) {
+                p.className = className;
+            }
+            gameOutput.appendChild(p);
+            gameOutput.scrollTop = gameOutput.scrollHeight;
+        }
+        
+        function initialize() {
+            appendOutput("SOFTPORN ADVENTURE");
+            appendOutput("WRITTEN BY CHUCK BENTON");
+            appendOutput("COPYRIGHT 1981");
+            appendOutput("BLUE SKY SOFTWARE");
+            appendOutput("");
+            appendOutput("");
+            
+            appendOutput("SHOULD A SAVED GAME BE LOADED? (Y/N)");
+            appendOutput("(Just enter N for now - save feature not implemented)");
+            appendOutput("");
+            
+            // Set the initial room image
+            updateRoomImage(gameState.currentRoom, null);
+            
+            // Force them to type N to start
+            const handleInitial = function(e) {
+                if (e.key === "Enter") {
+                    const command = commandInput.value.trim().toUpperCase();
+                    appendOutput("> " + command, "input-line");
+                    commandInput.value = "";
+                    
+                    if (command === "N") {
+                        commandInput.removeEventListener("keydown", handleInitial);
+                        commandInput.addEventListener("keydown", handleCommandInput);
+                        appendOutput("PLEASE WAIT");
+                        appendOutput("INITIALIZATION PHASE");
+                        
+                        setTimeout(() => {
+                            appendOutput(lookAround());
+                        }, 1000);
+                    } else {
+                        appendOutput("PLEASE ENTER N TO START A NEW GAME");
+                    }
+                }
+            };
+            
+            commandInput.addEventListener("keydown", handleInitial);
+        }
+        
         // Movement handler
         function movePlayer(direction) {
             const currentRoom = rooms[gameState.currentRoom];
+            console.log("Current room:", currentRoom);
+            console.log("Direction:", direction);
+            console.log("Available exits:", currentRoom.exits);
             
-            if (currentRoom.exits[direction]) {
+            if (currentRoom.exits && currentRoom.exits[direction]) {
+                const previousRoom = gameState.currentRoom;
                 gameState.currentRoom = currentRoom.exits[direction];
+                console.log("Moving to room:", gameState.currentRoom);
+                
+                // Update the room image when room changes
+                updateRoomImage(gameState.currentRoom, previousRoom);
+                
                 return lookAround();
             }
             
             return "I CAN'T GO IN THAT DIRECTION!!";
+        }
+        
+        // Update room image function
+        async function updateRoomImage(roomId, previousRoomId) {
+            const roomImage = document.getElementById('room-image');
+            if (!roomImage) {
+                console.error('Room image element not found');
+                return;
+            }
+            
+            // Get room description
+            const room = rooms[roomId];
+            const description = `${room.name}: ${room.description}`;
+            
+            try {
+                // Show loading overlay
+                const loadingOverlay = document.getElementById('loading-overlay');
+                const loadingMessage = document.getElementById('loading-message');
+                const loadingProgress = document.getElementById('loading-progress');
+                
+                loadingMessage.textContent = `GENERATING "${room.name}" IMAGE...`;
+                loadingProgress.textContent = "INITIALIZING 3D SCENE";
+                loadingOverlay.classList.add('active');
+                
+                // Simulate progress steps with messages
+                const progressSteps = [
+                    "ANALYZING ROOM DESCRIPTION",
+                    "CREATING LOW-POLY MODELS",
+                    "ADDING NEON LIGHTING",
+                    "PLACING CHARACTERS",
+                    "RENDERING 3D SCENE",
+                    "ADDING 80s AESTHETIC",
+                    "APPLYING FINAL TOUCHES"
+                ];
+                
+                let stepIndex = 0;
+                const progressInterval = setInterval(() => {
+                    loadingProgress.textContent = progressSteps[stepIndex];
+                    stepIndex = (stepIndex + 1) % progressSteps.length;
+                }, 1500);
+                
+                // Try to generate AI image
+                const imageUrl = await generateRoomImage(description);
+                
+                // Clear the progress interval
+                clearInterval(progressInterval);
+                
+                if (imageUrl) {
+                    // Add a final message before hiding
+                    loadingProgress.textContent = "IMAGE GENERATED SUCCESSFULLY!";
+                    
+                    // Give a short extra delay for visual feedback that process completed
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    // Hide loading overlay
+                    loadingOverlay.classList.remove('active');
+                    
+                    // Set the new image
+                    roomImage.src = imageUrl;
+                    roomImage.alt = `Room ${roomId}: ${room.name}`;
+                    return;
+                }
+            } catch (error) {
+                console.error('Failed to generate AI image:', error);
+                
+                // Show error in the loading overlay
+                const loadingOverlay = document.getElementById('loading-overlay');
+                const loadingMessage = document.getElementById('loading-message');
+                const loadingProgress = document.getElementById('loading-progress');
+                
+                loadingMessage.textContent = "IMAGE GENERATION FAILED";
+                loadingProgress.textContent = "FALLING BACK TO DEFAULT IMAGE";
+                
+                // Give some time to see the error message
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Hide loading overlay
+                loadingOverlay.classList.remove('active');
+            }
+            
+            // Fallback to room-specific image or placeholder
+            const imagePath = `room${roomId}.jpg`;
+            
+            // Create a new image element to test if the image exists
+            const testImage = new Image();
+            testImage.onload = function() {
+                // Image exists, set it
+                roomImage.src = imagePath;
+                roomImage.alt = `Room ${roomId}: ${room.name}`;
+            };
+            
+            testImage.onerror = function() {
+                // If image doesn't exist, use a data URI placeholder
+                roomImage.src = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0iIzAwMCIvPjx0ZXh0IHg9IjQwMCIgeT0iMzAwIiBmb250LWZhbWlseT0iQ291cmllciBOZXciIGZvbnQtc2l6ZT0iMzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMzM2ZmMzMiPlJvb20gJHtyb29tSWR9OiAke3Jvb20ubmFtZX08L3RleHQ+PC9zdmc+`;
+                roomImage.alt = `Room ${roomId}: ${room.name}`;
+            };
+            
+            // Start loading the image
+            testImage.src = imagePath;
+        }
+
+        // Function to generate room image using AI
+        async function generateRoomImage(description) {
+            try {
+                // Extract room name from description
+                const roomParts = description.split(":");
+                const roomName = roomParts[0].trim();
+                const roomDesc = roomParts[1].trim();
+                
+                // Check current room to add characters and items
+                const currentRoom = rooms[gameState.currentRoom];
+                let characters = [];
+                let itemsList = [];
+                
+                // Create list of items in the room (both fixed objects and inventory items)
+                const allRoomItems = [...currentRoom.objects];
+                
+                // Add inventory items that are in this room
+                for (const [item, location] of Object.entries(gameState.objectLocations)) {
+                    if (location === gameState.currentRoom) {
+                        allRoomItems.push(item);
+                    }
+                }
+                
+                // Filter items into characters and objects
+                allRoomItems.forEach(item => {
+                    if (["FUNKY HOOKER", "GIRL", "BARTENDER", "BLONDE", "PREACHER", 
+                         "BIG DUDE", "BUM", "BUSINESSMAN", "WAITRESS", "DEALER"].includes(item)) {
+                        characters.push(item);
+                    } else {
+                        itemsList.push(item);
+                    }
+                });
+                
+                // Process characters for the prompt
+                let charactersText = "";
+                if (characters.length > 0) {
+                    let characterDescriptions = [];
+                    
+                    characters.forEach(character => {
+                        if (character === "FUNKY HOOKER") {
+                            characterDescriptions.push("a woman with big curly 80s hair in glamorous outfit");
+                        } else if (character === "GIRL" && roomName === "DISCO") {
+                            characterDescriptions.push("a woman with neon outfit and headband dancing under disco lights");
+                        } else if (character === "GIRL" && roomName === "JACUZZI") {
+                            characterDescriptions.push("a woman in shimmering swimsuit relaxing in a glowing jacuzzi");
+                        } else if (character === "BARTENDER") {
+                            characterDescriptions.push("a bartender with 80s mustache in stylish vest");
+                        } else if (character === "BLONDE") {
+                            characterDescriptions.push("a blonde receptionist with voluminous hair");
+                        } else if (character === "PREACHER") {
+                            characterDescriptions.push("an elvis-inspired preacher in glittery suit");
+                        } else if (character === "BIG DUDE") {
+                            characterDescriptions.push("a bouncer with sunglasses and muscle shirt");
+                        } else if (character === "BUM") {
+                            characterDescriptions.push("a disheveled person in neon clothes");
+                        } else if (character === "BUSINESSMAN") {
+                            characterDescriptions.push("a man in white suit with rolled up sleeves");
+                        } else if (character === "WAITRESS") {
+                            characterDescriptions.push("a waitress with leg warmers and crop top");
+                        } else if (character === "DEALER") {
+                            characterDescriptions.push("a casino dealer with bow tie and visor");
+                        }
+                    });
+                    
+                    if (characterDescriptions.length > 0) {
+                        charactersText = characterDescriptions.join(", ");
+                    }
+                }
+                
+                // Add room-specific visual elements
+                let roomElements = "";
+                let lightingEffects = "neon lighting, glowing ambiance";
+                
+                if (roomName === "BAR") {
+                    roomElements = "wood-paneled walls, neon beer signs, mirrored backsplash, cocktail glasses";
+                    lightingEffects = "pink and blue neon tube lights, smoky atmosphere";
+                } else if (roomName === "DISCO") {
+                    roomElements = "disco ball, checkered dance floor, mirror balls, laser lights";
+                    lightingEffects = "pulsing dance floor lights, spotlights, fog machine haze";
+                } else if (roomName === "JACUZZI") {
+                    roomElements = "steaming hot tub with blue glowing water, tropical plants, champagne bottles";
+                    lightingEffects = "underwater lights, fairy lights, ambient blue glow";
+                } else if (roomName === "CASINO") {
+                    roomElements = "low-poly slot machines, neon playing cards, poker chips, roulette wheel";
+                    lightingEffects = "flashing casino lights, spotlight on gaming tables";
+                } else if (roomName === "BATHROOM") {
+                    roomElements = "marble surfaces, gold fixtures, palm plant, mirror with lights";
+                    lightingEffects = "vanity mirror lights, soft pink glow";
+                } else if (roomName === "BEDROOM" || roomName === "SUITE") {
+                    roomElements = "heart-shaped bed, mirrored ceiling, satin sheets, lava lamp";
+                    lightingEffects = "mood lighting, purple and red glow";
+                } else if (roomName === "HALLWAY" || roomName === "HOTEL HALL") {
+                    roomElements = "patterned carpet, palm plants, abstract wall art";
+                    lightingEffects = "wall sconces, ambient corridor lighting";
+                } else if (roomName.includes("STREET")) {
+                    roomElements = "palm trees, vintage cars, neon storefronts, pay phone";
+                    lightingEffects = "street lamps, building signs, moonlight";
+                } else if (roomName === "PHARMACY") {
+                    roomElements = "glass counters, neon sign, product shelves";
+                    lightingEffects = "fluorescent ceiling panels, blue-tinted light";
+                } else {
+                    // Default room elements for unspecified rooms
+                    roomElements = "80s furniture, potted palm plants, abstract art pieces";
+                }
+                
+                // Add special visual items
+                if (itemsList.includes("BED")) {
+                    roomElements += ", heart-shaped waterbed with satin sheets";
+                }
+                if (itemsList.includes("TV")) {
+                    roomElements += ", vintage TV with static screen";
+                }
+                if (itemsList.includes("SLOT MACHINES")) {
+                    roomElements += ", colorful low-poly slot machines with flashing lights";
+                }
+                if (itemsList.includes("WHISKEY") || itemsList.includes("BEER")) {
+                    roomElements += ", glowing bottles on shelves";
+                }
+                if (itemsList.includes("DESK")) {
+                    roomElements += ", sleek desk with neon trim";
+                }
+                if (itemsList.includes("JACUZZI")) {
+                    roomElements += ", bubbling hot tub with geometric reflective water";
+                }
+                
+                // Combine into final prompt
+                let finalPrompt = `three.js style 3D render of ${roomDesc}, 1980s party mansion aesthetic`;
+                
+                // Add characters
+                if (charactersText) {
+                    finalPrompt += ` with ${charactersText}`;
+                }
+                
+                // Add room elements and style details
+                finalPrompt += `. Low-poly 3D modeling with ${roomElements}. ${lightingEffects}, vibrant saturated colors, neon pinks, purples, blues, and greens. Subtle grainy texture. Clean geometric shapes, blocky three.js style, cheeky retro vibe. Starry night sky visible through windows. Stylized with exaggerated 80s features. Interactive game items have faint glow. Bold retro-futuristic aesthetic with nostalgic, comedic mood`;
+                
+                // Maintain adult themes hint but tastefully
+                if (roomName === "BEDROOM" || roomName === "JACUZZI" || charactersText.includes("hooker")) {
+                    finalPrompt += `, suggestive but tasteful atmosphere`;
+                }
+                
+                console.log("Image prompt:", finalPrompt);
+                
+                // Encode and create URL
+                const encodedPrompt = encodeURIComponent(finalPrompt);
+                const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}`;
+                
+                // Give more time for the API to actually generate the image
+                // This is important because Pollinations sometimes needs time to process
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                
+                return imageUrl;
+            } catch (error) {
+                console.error('Error generating image:', error);
+                return null;
+            }
         }
         
         // Look around function
@@ -463,6 +1043,66 @@
                 exits.push(direction);
             }
             output += exits.join(", ");
+            
+            // Update available commands container
+            const commandsContent = document.querySelector('.commands-content');
+            let commandsHtml = '';
+            
+            // Basic navigation commands
+            commandsHtml += '<div>N/S/E/W/U/D (or NORTH/SOUTH/EAST/WEST/UP/DOWN)</div>';
+            
+            // Basic game commands
+            commandsHtml += '<div>LOOK (look around)</div>';
+            commandsHtml += '<div>I (inventory)</div>';
+            commandsHtml += '<div>SCORE (check score)</div>';
+            commandsHtml += '<div>QUIT (exit game)</div>';
+            
+            // Room-specific commands
+            if (room.objects.length > 0) {
+                commandsHtml += '<div>EXAMINE [item] (look at specific items)</div>';
+                commandsHtml += '<div>TAKE [item] (pick up items)</div>';
+            }
+            
+            // Special room-specific commands
+            if (gameState.currentRoom === 3) { // Bar
+                commandsHtml += '<div>BUY WHISKEY/BEER</div>';
+                commandsHtml += '<div>PUSH BUTTON</div>';
+            } else if (gameState.currentRoom === 5) { // Backroom
+                commandsHtml += '<div>TV ON/OFF [channel]</div>';
+            } else if (gameState.currentRoom === 13) { // Casino
+                commandsHtml += '<div>PLAY SLOTS</div>';
+            } else if (gameState.currentRoom === 14) { // 21 Room
+                commandsHtml += '<div>PLAY 21</div>';
+            } else if (gameState.currentRoom === 21) { // Disco
+                commandsHtml += '<div>DANCE</div>';
+                commandsHtml += '<div>BUY WINE</div>';
+            } else if (gameState.currentRoom === 24) { // Pharmacy
+                commandsHtml += '<div>BUY RUBBER/MAGAZINE</div>';
+            } else if (gameState.currentRoom === 27) { // Kitchen
+                commandsHtml += '<div>WATER ON/OFF</div>';
+                commandsHtml += '<div>FILL PITCHER</div>';
+            } else if (gameState.currentRoom === 20) { // Phone booth
+                commandsHtml += '<div>CALL 555-6969</div>';
+                commandsHtml += '<div>CALL 555-0987</div>';
+            } else if (gameState.currentRoom === 4 || gameState.currentRoom === 11 || gameState.currentRoom === 22) { // Streets
+                commandsHtml += '<div>HAIL TAXI</div>';
+            }
+            
+            // Inventory-specific commands
+            const inventoryItems = [];
+            for (const [item, location] of Object.entries(gameState.objectLocations)) {
+                if (location === "INVENTORY") {
+                    inventoryItems.push(item);
+                }
+            }
+            
+            if (inventoryItems.length > 0) {
+                commandsHtml += '<div>DROP [item]</div>';
+                commandsHtml += '<div>USE [item]</div>';
+            }
+            
+            // Update the commands container
+            commandsContent.innerHTML = commandsHtml;
             
             return output;
         }
@@ -730,12 +1370,15 @@
                         destination = destination.toUpperCase();
                         if (destination === "DISCO") {
                             gameState.currentRoom = 21;
+                            updateRoomImage(21, gameState.currentRoom);
                             return lookAround();
                         } else if (destination === "CASINO") {
                             gameState.currentRoom = 13;
+                            updateRoomImage(13, gameState.currentRoom);
                             return lookAround();
                         } else if (destination === "BAR") {
                             gameState.currentRoom = 3;
+                            updateRoomImage(3, gameState.currentRoom);
                             return lookAround();
                         }
                         return "HUH? HAIL ANOTHER!";
@@ -838,10 +1481,6 @@
                     return "A SIGN SAYS 'ENTRY BY SHOWING PASSCARD- CLUB MEMBERS AND THEIR GUESTS ONLY!";
                 }
                 return "IT'S UNLOCKED";
-            }
-            
-            if (noun === "BILLBOARD" && gameState.currentRoom === 4) {
-                return "IT SAYS 'HAIL TAXI HERE'";
             }
             
             if (noun === "CABINET" && gameState.currentRoom === 27) {
@@ -1315,6 +1954,7 @@
             
             if (noun === "BUSHES" && gameState.currentRoom === 15) {
                 gameState.currentRoom = 28;
+                updateRoomImage(28, 15);
                 return lookAround();
             }
             
@@ -1357,87 +1997,7 @@
             return total;
         }
         
-        // Initialize the game
-        let gameOutput = document.getElementById("game-container");
-        let commandInput = document.getElementById("command-input");
-        
-        function initialize() {
-            appendOutput("SOFTPORN ADVENTURE");
-            appendOutput("WRITTEN BY CHUCK BENTON");
-            appendOutput("COPYRIGHT 1981");
-            appendOutput("BLUE SKY SOFTWARE");
-            appendOutput("");
-            appendOutput("");
-            
-            appendOutput("SHOULD A SAVED GAME BE LOADED? (Y/N)");
-            appendOutput("(Just enter N for now - save feature not implemented)");
-            appendOutput("");
-            
-            // Force them to type N to start
-            const handleInitial = function(e) {
-                if (e.key === "Enter") {
-                    const command = commandInput.value.trim().toUpperCase();
-                    appendOutput("> " + command, "input-line");
-                    commandInput.value = "";
-                    
-                    if (command === "N") {
-                        commandInput.removeEventListener("keydown", handleInitial);
-                        commandInput.addEventListener("keydown", handleCommand);
-                        appendOutput("PLEASE WAIT");
-                        appendOutput("INITIALIZATION PHASE");
-                        
-                        setTimeout(() => {
-                            appendOutput(lookAround());
-                        }, 1000);
-                    } else {
-                        appendOutput("PLEASE ENTER N TO START A NEW GAME");
-                    }
-                }
-            };
-            
-            commandInput.addEventListener("keydown", handleInitial);
-        }
-        
-        function handleCommand(e) {
-            if (e.key === "Enter") {
-                const command = commandInput.value.trim();
-                appendOutput("> " + command, "input-line");
-                commandInput.value = "";
-                
-                if (command.length > 0) {
-                    const response = handleCommand(command);
-                    appendOutput(response);
-                }
-            }
-        }
-        
-        function appendOutput(text, className) {
-            const p = document.createElement("p");
-            p.textContent = text;
-            if (className) {
-                p.className = className;
-            }
-            gameOutput.appendChild(p);
-            gameOutput.scrollTop = gameOutput.scrollHeight;
-        }
-        
         window.onload = initialize;
-    </script>
-    <a href="https://x.com/nznavinoa">Follow me on X</a>
-    <p>Page visits: <span id="visitCount">0</span></p>
-
-    <script>
-        // Get the current visit count from localStorage, default to 0 if not set
-        let visits = localStorage.getItem('visitCount') || 0;
-        
-        // Increment the count
-        visits = parseInt(visits) + 1;
-        
-        // Save the new count back to localStorage
-        localStorage.setItem('visitCount', visits);
-        
-        // Display the count on the page
-        document.getElementById('visitCount').innerText = visits;
     </script>
 </body>
 </html>
