@@ -320,7 +320,7 @@
     
     <div class="footer">
         <a href="https://x.com/nznavinoa">Follow me on X</a>
-        <p>Page visits: <span id="visitCount">234763</span></p>
+        <p>Page visits: <span id="visitCount">0</span></p>
     </div>
 
     <div class="copyright">
@@ -365,7 +365,12 @@
                 phoneCall69: false,
                 phoneCallLiquor: false,
                 girlTiedUp: false,
-                dancedAtDisco: false
+                dancedAtDisco: false,
+                toiletFlushed: false,
+                takenDumpsterItem: false,
+                buttonPushed: 0,
+                blackjackPlayed: false,
+                slotMachinePlayed: false
             },
             gameOver: false,
             deathMessage: "",
@@ -389,7 +394,10 @@
                 "PITCHER": null,
                 "ROPE": null,
                 "CONTROLLER": null,
-                "SEEDS": null
+                "SEEDS": null,
+                "GARBAGE": 6,
+                "CORE": null,
+                "MUSHROOM": null
             }
         };
 
@@ -592,7 +600,11 @@
             "TV CHANNEL 4": "THE NEWS!!! TODAY THE PRIME RATE WAS RAISED ONCE AGAIN...TO 257%! THIS DOES NOT COME NEAR THE RECORD SET IN 1996- WHEN IT BROKE THE 1000% MARK.........................\nTHE BIRTH RATE HAS TAKEN A DRAMATIC FALL....THIS IS DUE TO THE INCREASED USAGE OF COMPUTERS AS SEXUAL PARTNERS..\nHOWEVER....RAPES OF INNOCENT PEOPLE ARE ON THE INCREASE! AND WHO IS THE RAPIST?? COMPUTERIZED BANKING MACHINES LEAD THE LIST....FOLLOWED BY HOME COMPUTERS.....",
             "TV CHANNEL 5": "MR. RODJERKS JUMPS UP WITH HIS BIG SNEAKERS AND SAYS IN HIS CHEERY VOICE.. GUESS WHAT- BOYS AND GIRLS????? TODAY WE'RE GOING TO LEARN ABOUT SUCKERS!!\nSUSIE...SEE THE LOLLY-POP???? CAN YOU STICK IT IN YOUR MOUTH??? THAT'S RIGHT!\nTHAT'S A NICE LOLLY-POP....NICE AND HARD RIGHT?!?!?!?.................",
             "TV CHANNEL 6": "CABLE TV!!!!!!!!\nTHERE SHOWING THE KINKIEST X-RATED MOVIES!!!!!!! THIS ONE'S TITLED 'DEEP NOSTRIL'.\nTHE PIMP LIKES THIS ONE!!!!!!\nHE'S ENGROSSED IN THE ACTION HE SEES!!!! SEEMS DISTRACTED.................",
+            "TV CHANNEL 7": "IT'S HAPPY DAZE!!!!!!!!\nRICHIE TURNS TO GONZY AND SAYS 'BUT YOU ALWAYS HAD IT MADE WITH THE GIRLS.......WHAT'S YOUR SECRET???'\nTHE GONZ SAYS 'AAYYYYYY....I DIDN'T GET MY NAME FOR NUTHIN!'\nREACHING INTO HIS POCKET HE PULLS OUT A FUNNY LOOKING CIGARETTE............",
+            "TV CHANNEL 8": "MRS. SMITH AND MRS. JONES ARE COMPARING DETERGENTS.......SEE THIS BLOUSE? WE'RE MAKING IT THIS DIRTY TO SEE WHO'S WORKS BETTER.(A DOG IS THROWN ONTO THE BLOUSE. IN HIS EXCITEMENT HE DEFICATES ALL OVER IT......)\nDO YOU THINK YOURS WILL WORK- MRS. SMITH?? (THE CAMERA PANS TO MRS. SMITH. SHE THROWS UP.)\nMRS JONES????? (A SHOT SHOWS HER TAKING THE DOG AND...........)",
+            "TV CHANNEL 9": "IT'S THE SUPER BOWL!!!!\nTHE CENTER SNAPS THE BALL! THE QUARTERBACK FADES BACK!!\nIT'S A BOMB!!!!!!! THE BALL SAILS THROUGH THE AIR....THE RECIEVER RUNS TO GET IT................\nIT EXPLODES IN HIS HANDS!!!! WHAT A BOMB!!!! TELL ME HOWARD- HAVE YOU EVER SEEN THIS BEFORE???",
             "TAXI": "A TAXI PULLS UP AND SCREECHES TO A HALT!\nI GET IN THE BACK AND SIT DOWN.\nA SIGN SAYS 'WE SERVICE 3 DESTINATIONS. WHEN ASKED- PLEASE SPECIFY- DISCO.......CASINO....OR BAR.\nTHE DRIVER TURNS AND ASKS 'WHERE TO MAC??'",
+            "TAXI WINE": "THE DRIVER LOOKS AT ME AND SAYS 'HEY!! WHAT'S THAT YOU GOT....WINE????'\nHE GRABS THE BOTTLE AND GUZZLES THE WINE DOWN!!!!!!!!!!!!!!!!!!!\nOH NO!!!!! HE'S SWERVING TOWARDS A HUGE TRUCK!!!!!\nI GRAB THE WHEEL........................WE STRUGGLE!!!..........................THE TRUCK JUST MISSES US!!!!!!!",
             "ELEVATOR": "THE ELEVATOR DOORS OPEN....I GET IN.\nAS THE DOORS CLOSE MUSIC STARTS PLAYING-IT'S THE USUAL ELEVATOR STUFF...BORING!\nWE START TO MOVE.....AFTER A FEW SECONDS THE ELEVATOR STOPS.\nTHE DOORS OPEN AND I GET OUT.",
             "HOOKER SEX": "SHE SAYS 'ME FIRST!!!!!' SHE TAKES MY THROBBING TOOL INTO HER MOUTH!!!! SHE STARTS GOING TO WORK......FEELS SO GOOD!!!!!!\nTHEN SHE SMILES AS SHE BITES IT OFF! SHE SAYS 'NO ORAL SEX IN THIS GAME!!!!!!! SUFFER!!!!!!!'",
             "BUM STORY": "WELL MY SON....HERE'S MY STORY. I CAME HERE MANY YEARS AGO- AND MY GOALS WERE THE SAME AS YOURS.....BUT THIS ADVENTURE WAS TOO MUCH FOR ME!\nHERE'S A GIFT.......CARRY IT WITH YOU AT ALL TIMES!!!!!\nTHERE'S SOME KINKY GIRLS IN THIS TOWN!! AND YOU NEVER KNOW WHEN YOU MAY NEED TO USE THIS TO DEFEND YOURSELF!!!!!!!",
@@ -600,7 +612,29 @@
             "JACUZZI GIRL SEX": "SHE HOPS OUT OF THE TUB- THE STEAM RISING FROM HER SKIN.......HER BODY IS THE BEST LOOKING I'VE EVER SEEN!!!\nTHEN SHE COMES UP TO ME AND GIVES THE BEST TIME OF MY LIFE!!!\nWELL......I GUESS THAT'S IT! AS YOUR PUPPET IN THIS GAME I THANK YOU FOR THE PLEASURE YOU HAVE BROUGHT ME.... SO LONG......I'VE GOT TO GET BACK TO MY NEW GIRL HERE! KEEP IT UP!",
             "HOOKER SEX SUCCESS": "IT'S A GOOD THING I WAS WEARING THAT RUBBER!!!!!!\nSHE WAS OK- BUT REALLY.......CAN'T YOU DO BETTER THAN THIS??\nTHE SCORE NOW IS '1' OUT OF A POSSIBLE '3'.....SO CONGRATULATIONS!!!!\nWELL........GO TO IT- YOU STUD!!!! FIND ME ANOTHER GIRL!",
             "TIED UP": "SHE SAYS 'LAY DOWN HONEY- LET ME GIVE YOU A SPECIAL SUPRISE!!\nI LAY DOWN AND SHE SAYS 'OK- NOW CLOSE YOUR EYES'. I CLOSE MY EYES AND SHE SHE STARTS TO GO TO WORK ON ME.........\nI'M REALLY ENJOYING MYSELF WHEN SUDDENLY SHE TIES ME TO THE BED!!!! THEN SHE SAYS 'SO LONG- TURKEY!' AND RUNS OUT OF THE ROOM!!!\nWELL- THE SCORE IS NOW '2' OUT OF A POSSIBLE '3'.........BUT I'M ALSO TIED TO THE BED AND CAN'T MOVE.",
-            "PILLS": "THIS STUFF IS GOOD! I'M BREATHING HEAVILY- I'VE NEVER BEEN THIS HORNY!!!\nI'VE JUST GOT TO DO SOMETHING!................................................\nAH...THERE GOES A FEMALE GERMAN SHEPARD! THAT GIVES ME AN IDEA!................\nKINKY DOG!!!!!! CHEWED ME TO DEATH!!!"
+            "PILLS": "THIS STUFF IS GOOD! I'M BREATHING HEAVILY- I'VE NEVER BEEN THIS HORNY!!!\nI'VE JUST GOT TO DO SOMETHING!................................................\nAH...THERE GOES A FEMALE GERMAN SHEPARD! THAT GIVES ME AN IDEA!................\nKINKY DOG!!!!!! CHEWED ME TO DEATH!!!",
+            "TOILET": "A TOILET SITS IN THE CORNER. THIS BABY LOOKS DANGEROUS!\nIT HANGS FROM THE WALL BY ITS RUSTED PLUMBING.",
+            "BLACKJACK HINT": "'21' CAN BE BEAT!!\nTHE TRICK IS- ALWAYS PLAY WITH BLUE CARDS AND ALWAYS BET $2!",
+            "BLONDE PILLS": "THE BLONDE LOOKS AT THE PILLS AND SAYS 'THANKS!!! I LOVE THIS STUFF!'\nSHE TAKES A PILL..........HER NIPPLES START TO STAND UP! WOW!!!!\nSHE'S BREATHING HEAVILY....I HOPE SHE RAPES ME!!!!!\nSHE SAYS 'SO LONG!!! I'M GOING TO GO SEE MY BOYFRIEND!' SHE DISAPPEARS DOWN THE STAIRS........",
+            "APPLE EATEN": "SHE TAKES THE APPLE AND RAISES IT TO HER MOUTH. WITH AN OUTRAGEOUSLY INNOCENT LOOK SHE TAKES A SMALL BITE OUT OF IT.\nA SMILE COMES ACROSS HER FACE! SHE'S REALLY STARTING TO LOOK QUITE SEXY!!!!\nSHE WINKS AND LAYS BACK INTO THE JACUZZI",
+            "PHONE CALL 69": "A VOICE SAYS 'HELLO, PLEASE ANSWER THE QUESTIONS WITH ONE WORD ANSWERS!\nWHAT'S YOUR FAVORITE GIRLS NAME? ALICE\nNAME A NICE PART OF HER ANATOMY. EYES\nWHAT DO YOU LIKE TO DO WITH HER? TALK\nAND THE BEST PART OF YOUR BODY?!? BRAIN\nFINALLY, YOUR FAVORITE OBJECT? BOOK\nHE HANGS UP!!!!!",
+            "PHONE ANSWER": "A GIRL SAYS 'HI HONEY! THIS IS ALICE.\nDEAR, WHY DON'T YOU FORGET THIS GAME AND TALK WITH ME???\nAFTER ALL, YOUR BRAIN HAS ALWAYS TURNED ME ON!!!!\nSO BRING A BOOK AND COME PLAY WITH MY EYES !!!!\nSHE HANGS UP!!",
+            "TOILET FLUSH": "OK, HERE GOES..........................\nOH, NO!!!!!! IT'S OVERFLOWING!!!!!!!!!! IT'S FILLING THE ROOM WITH GROSS SEWAGE!\n\nI'M DEAD FROM THE GERMS!!",
+            "CONSTIPATION": "...........I GOT THOSE CONSTIPATION BLUES............................\nAHHH...RELIEF! THANKS!",
+            "GARBAGE": "I SEE SOMETHING!! THE CORE OF AN APPLE.",
+            "SEEDS": "I SEE SOMETHING!! SEEDS.",
+            "MIRROR": "THERE'S A PERVERT LOOKING BACK AT ME!!!",
+            "PIMP": "HE'S WEARING A BUTTON PROCLAIMING- SUPPORT YOUR LOCAL PIMP, GIMME $2000!!!",
+            "BUSINESSMAN": "HE LOOKS LIKE A WHISKEY DRINKER TO ME!!",
+            "BARTENDER": "HE'S WAITING FOR ME TO BUY SOMETHING!",
+            "BILLBOARD": "FOR THOSE WHO DESIRE THE BEST:\n\nANNOUNCING\n\nTHE MOST EXCLUSIVE,\n\nTHE EXCITING,\n\nTHE HOTTEST SPOT IN TOWN,\n\nSWINGING SINGLE'S DISCO",
+            "WINE DISCO GIRL": "SHE SAYS 'LAY DOWN HONEY- LET ME GIVE YOU A SPECIAL SUPRISE!!'",
+            "DISCO BLACKOUT": "BOOGIE WOOGIE!!!!\n\nYEH YEH YEH!!!\n\nI GOT THE STEPS, MAN!!",
+            "RUBBER INFO": "IT'S RED, STRAWBERRY-FLAVORED, LUBRICATED, AND RIBBED",
+            "DEATH TOILET": "OK, HERE GOES..........................\nOH, NO!!!!!! IT'S OVERFLOWING!!!!!!!!!! IT'S FILLING THE ROOM WITH GROSS SEWAGE!\n\nI'M DEAD FROM THE GERMS!!",
+            "DEATH DOG": "THIS STUFF IS GOOD! I'M BREATHING HEAVILY- I'VE NEVER BEEN THIS HORNY!!!\nI'VE JUST GOT TO DO SOMETHING!................................................\nAH...THERE GOES A FEMALE GERMAN SHEPARD! THAT GIVES ME AN IDEA!................\nKINKY DOG!!!!!! CHEWED ME TO DEATH!!!",
+            "DEATH CLAP": "OH NO!!!! I'VE GOT THE DREADED ATOMIC CLAP!!! I'M DEAD!!",
+            "DEATH JUMP": "AAAAAEEEEEIIIIIIII!!!!!! SPLAAATTTTT!!!!!"
         };
 
         // Command processor
@@ -656,6 +690,17 @@
                 }
                 gameState.gameOver = true;
                 return "THANKS FOR PLAYING!";
+            }
+            
+            // Save game command
+            if (command === "SAVE GAME") {
+                alert("GAME SAVED (NOT REALLY, THIS FEATURE IS NOT IMPLEMENTED)");
+                return "GAME SAVED";
+            }
+            
+            // Fun easter egg
+            if (command === "XYZZY") {
+                return "NICE TRY, ADVENTURER. WRONG GAME!";
             }
             
             // More complex commands
@@ -750,6 +795,17 @@
                 const previousRoom = gameState.currentRoom;
                 gameState.currentRoom = currentRoom.exits[direction];
                 console.log("Moving to room:", gameState.currentRoom);
+                
+                // Special cases
+                if (previousRoom === 5 && direction === "UP" && !gameState.gameFlags.pimpPaid) {
+                    if (gameState.money < 10) {
+                        gameState.currentRoom = previousRoom;
+                        return "THE PIMP SAYS I CAN'T UNTIL I GET $1000";
+                    }
+                    gameState.money -= 10;
+                    gameState.gameFlags.pimpPaid = true;
+                    return "THE PIMP TAKES $1000 AND SAYS OK\n" + lookAround();
+                }
                 
                 // Update the room image when room changes
                 updateRoomImage(gameState.currentRoom, previousRoom);
@@ -1086,6 +1142,13 @@
                 commandsHtml += '<div>CALL 555-0987</div>';
             } else if (gameState.currentRoom === 4 || gameState.currentRoom === 11 || gameState.currentRoom === 22) { // Streets
                 commandsHtml += '<div>HAIL TAXI</div>';
+            } else if (gameState.currentRoom === 2) { // Bathroom
+                commandsHtml += '<div>FLUSH TOILET</div>';
+            } else if (gameState.currentRoom === 9) { // Hooker's bedroom
+                commandsHtml += '<div>FUCK HOOKER</div>';
+            } else if (gameState.currentRoom === 8) { // Window ledge
+                commandsHtml += '<div>BREAK WINDOW</div>';
+                commandsHtml += '<div>JUMP</div>';
             }
             
             // Inventory-specific commands
@@ -1186,7 +1249,7 @@
             if (verb === "JUMP") {
                 if (gameState.currentRoom === 8) { // On the ledge
                     gameState.gameOver = true;
-                    gameState.deathMessage = "AAAAAEEEEEIIIIIIII!!!!!! SPLAAATTTTT!!!!!";
+                    gameState.deathMessage = specialDescriptions["DEATH JUMP"];
                     return gameState.deathMessage;
                 }
                 return "WHOOOPEEEEE!!!";
@@ -1233,10 +1296,11 @@
                 if (gameState.currentRoom === 20) { // In phone booth
                     if (noun === "555-6969") {
                         gameState.gameFlags.phoneCall69 = true;
-                        return "A VOICE SAYS 'HELLO, PLEASE ANSWER THE QUESTIONS WITH ONE WORD ANSWERS!\n\nWHAT'S YOUR FAVORITE GIRLS NAME? ALICE\n\nNAME A NICE PART OF HER ANATOMY. EYES\n\nWHAT DO YOU LIKE TO DO WITH HER? TALK\n\nAND THE BEST PART OF YOUR BODY?!? BRAIN\n\nFINALLY, YOUR FAVORITE OBJECT? BOOK\n\nHE HANGS UP!!!!!";
+                        return specialDescriptions["PHONE CALL 69"];
                     } else if (noun === "555-0987") {
                         if (gameState.gameFlags.girlMarried) {
                             gameState.gameFlags.phoneCallLiquor = true;
+                            gameState.objectLocations["WINE"] = 16; // Wine appears in the honeymoon suite
                             return "A VOICE ANSWERS AND SAYS 'WINE FOR THE NERVOUS NEWLYWEDS!! COMING RIGHT UP!!!!";
                         }
                         return "SOMEBODY ANSWERS AND HANGS UP!!!!";
@@ -1250,7 +1314,7 @@
             if (verb === "ANSWER") {
                 if (gameState.currentRoom === 30 && gameState.gameFlags.phoneCall69) {
                     gameState.gameFlags.phoneCall69 = false;
-                    return "A GIRL SAYS 'HI HONEY! THIS IS ALICE.\nDEAR, WHY DON'T YOU FORGET THIS GAME AND TALK WITH ME???\nAFTER ALL, YOUR BRAIN HAS ALWAYS TURNED ME ON!!!!\nSO BRING A BOOK AND COME PLAY WITH MY EYES !!!!\nSHE HANGS UP!!";
+                    return specialDescriptions["PHONE ANSWER"];
                 }
                 return "IT'S NOT RINGING!";
             }
@@ -1281,8 +1345,16 @@
                     return "YECCHHH!!!! TASTE'S AWFUL!";
                 } else if (noun === "PILLS" && gameState.objectLocations["PILLS"] === "INVENTORY") {
                     gameState.gameOver = true;
-                    gameState.deathMessage = specialDescriptions["PILLS"];
+                    gameState.deathMessage = specialDescriptions["DEATH DOG"];
                     return gameState.deathMessage;
+                } else if (noun === "MUSHROOM" && gameState.objectLocations["MUSHROOM"] === "INVENTORY") {
+                    // Special mushroom effect - teleport to random room
+                    const randomRoom = Math.floor(Math.random() * 3) + 1;
+                    gameState.currentRoom = randomRoom;
+                    updateRoomImage(randomRoom, gameState.currentRoom);
+                    return "HOLY COW!!! PSYCHEDELIC!!!!!\nPRETTY COLORS APPEAR AND I'M ELSEWHERE!\n" + lookAround();
+                } else if (noun === "CORE" && gameState.objectLocations["CORE"] === "INVENTORY") {
+                    return "TOO MOLDY!";
                 }
                 return "YECCHHH!!!! TASTE'S AWFUL!";
             }
@@ -1331,7 +1403,7 @@
             if (verb === "DANCE") {
                 if (gameState.currentRoom === 21) { // In the disco
                     gameState.gameFlags.dancedAtDisco = true;
-                    return "BOOGIE WOOGIE!!!!\n\nYEH YEH YEH!!!\n\nI GOT THE STEPS, MAN!!";
+                    return specialDescriptions["DISCO BLACKOUT"];
                 }
                 return "NOT MUCH ROOM TO DANCE HERE.";
             }
@@ -1367,7 +1439,13 @@
                 if (noun === "TAXI" || noun === "CAB") {
                     if (gameState.currentRoom === 4 || gameState.currentRoom === 11 || gameState.currentRoom === 22) {
                         let destination = prompt(specialDescriptions["TAXI"] + "\n\nWhere to? (DISCO, CASINO, or BAR)");
-                        destination = destination.toUpperCase();
+                        destination = destination ? destination.toUpperCase() : "";
+                        
+                        // Check if player has wine that can cause an accident
+                        if (gameState.objectLocations["WINE"] === "INVENTORY") {
+                            return specialDescriptions["TAXI WINE"];
+                        }
+                        
                         if (destination === "DISCO") {
                             gameState.currentRoom = 21;
                             updateRoomImage(21, gameState.currentRoom);
@@ -1411,6 +1489,75 @@
                     return "LET ME SEE IF I STILL HAVE THE KNIFE!";
                 }
                 return "TRY USING A KNIFE!!!";
+            }
+            
+            // FLUSH command
+            if (verb === "FLUSH") {
+                if (noun === "TOILET" && gameState.currentRoom === 2) {
+                    gameState.gameOver = true;
+                    gameState.deathMessage = specialDescriptions["DEATH TOILET"];
+                    return gameState.deathMessage;
+                }
+                return "YOU'RE NUTS!!";
+            }
+            
+            // LISTEN command
+            if (verb === "LISTEN") {
+                if (noun === "RADIO" && gameState.objectLocations["RADIO"] === "INVENTORY") {
+                    gameState.gameFlags.radioListened = true;
+                    return "AN ADVERTISEMENT SAYS 'CALL 555-0987 FOR ALL YOUR LIQUOR NEEDS!!!!";
+                }
+                return "I DON'T HEAR ANYTHING SPECIAL.";
+            }
+            
+            // Joke commands
+            if (verb === "KISS") {
+                return "DON'T DO THAT!!!! IT GETS ME EXCITED!!";
+            }
+            
+            if (verb === "STAB") {
+                gameState.gameOver = true;
+                return "OK- WARMONGER!\nPARRY!!\nTHRUST!!!\nI JUST GOT MYSELF!!";
+            }
+            
+            if (verb === "SAY") {
+                return "OK\n" + noun;
+            }
+            
+            // Typo joke
+            if (["TKAE", "TAEK"].includes(verb)) {
+                return "LEARN TO SPELL IDIOT!";
+            }
+            
+            // Go command with directions
+            if (verb === "GO") {
+                if (noun === "NORTH" || noun === "N") {
+                    return movePlayer("NORTH");
+                } else if (noun === "SOUTH" || noun === "S") {
+                    return movePlayer("SOUTH");
+                } else if (noun === "EAST" || noun === "E") {
+                    return movePlayer("EAST");
+                } else if (noun === "WEST" || noun === "W") {
+                    return movePlayer("WEST");
+                } else if (noun === "UP" || noun === "U") {
+                    return movePlayer("UP");
+                } else if (noun === "DOWN" || noun === "D") {
+                    return movePlayer("DOWN");
+                }
+                return "I CAN'T GO THAT WAY";
+            }
+            
+            // Pay command
+            if (verb === "PAY") {
+                if (noun === "PIMP" && gameState.currentRoom === 5) {
+                    if (gameState.money < 10) {
+                        return "I DON'T HAVE ENOUGH MONEY!";
+                    }
+                    gameState.money -= 10;
+                    gameState.gameFlags.pimpPaid = true;
+                    return "THE PIMP TAKES $1000 AND SAYS OK";
+                }
+                return "TRY GOING UP- HE'LL TAKE THE MONEY THEN";
             }
             
             return "I DON'T KNOW HOW TO " + verb + " SOMETHING!";
@@ -1469,7 +1616,7 @@
             
             if (noun === "MIRROR" && gameState.currentRoom === 2) {
                 gameState.gameFlags.mirrorExamined = true;
-                return "THERE'S A PERVERT LOOKING BACK AT ME!!!";
+                return specialDescriptions["MIRROR"];
             }
             
             if (noun === "BUTTON" && gameState.currentRoom === 3) {
@@ -1501,6 +1648,46 @@
             
             if (noun === "SINK" && gameState.currentRoom === 27) {
                 return "A SIGN SAYS 'WATER ON OR OFF TO OPERATE'";
+            }
+            
+            if (noun === "GARBAGE" && gameState.currentRoom === 6 && !gameState.gameFlags.takenDumpsterItem) {
+                gameState.objectLocations["CORE"] = 6;
+                gameState.gameFlags.takenDumpsterItem = true;
+                return specialDescriptions["GARBAGE"];
+            }
+            
+            if (noun === "CORE" && gameState.objectLocations["CORE"] === gameState.currentRoom && !gameState.gameFlags.seedsFound) {
+                gameState.objectLocations["SEEDS"] = gameState.currentRoom;
+                gameState.gameFlags.seedsFound = true;
+                return specialDescriptions["SEEDS"];
+            }
+            
+            if (noun === "BILLBOARD" && gameState.currentRoom === 4) {
+                return specialDescriptions["BILLBOARD"];
+            }
+            
+            if (noun === "BIG DUDE" && gameState.currentRoom === 5) {
+                return specialDescriptions["PIMP"];
+            }
+            
+            if (noun === "BUSINESSMAN" && gameState.currentRoom === 3) {
+                return specialDescriptions["BUSINESSMAN"];
+            }
+            
+            if (noun === "BARTENDER" && gameState.currentRoom === 3) {
+                return specialDescriptions["BARTENDER"];
+            }
+            
+            if (noun === "TOILET" && gameState.currentRoom === 2) {
+                return "HASN'T BEEN FLUSHED IN AGES! STINKS!!!!";
+            }
+            
+            if (noun === "RUBBER" && gameState.objectLocations["RUBBER"] === "INVENTORY") {
+                return specialDescriptions["RUBBER INFO"];
+            }
+            
+            if (noun === "SIGN" && (gameState.currentRoom === 4 || gameState.currentRoom === 11 || gameState.currentRoom === 22)) {
+                return "IT SAYS 'HAIL TAXI HERE'";
             }
             
             // Check if the object is in the current room or inventory
@@ -1570,6 +1757,19 @@
                 return "NOTHING ELSE ON THE TREE.";
             }
             
+            // Special case for garbage in dumpster
+            if (noun === "GARBAGE" && gameState.currentRoom === 6 && !gameState.gameFlags.takenDumpsterItem) {
+                gameState.objectLocations["CORE"] = "INVENTORY";
+                gameState.gameFlags.takenDumpsterItem = true;
+                return "I FOUND THE CORE OF AN APPLE IN THE GARBAGE.";
+            }
+            
+            // Special case for core
+            if (noun === "CORE" && gameState.currentRoom === 6 && !gameState.gameFlags.seedsFound) {
+                gameState.objectLocations["CORE"] = "INVENTORY";
+                return "OK";
+            }
+            
             // Don't let the player take certain fixed objects
             if (["DESK", "WASHBASIN", "MIRROR", "TOILET", "BUSINESSMAN", "BUTTON", "BARTENDER", "BIG DUDE", "FUNKY HOOKER", "BED", "PREACHER", "TV", "SLOT MACHINES", "CARDS", "DEALER", "BLONDE", "GIRL", "DOOR", "WAITRESS", "TABLE", "TELEPHONE", "CLOSET", "SINK", "CABINET", "ELEVATOR", "BUSHES", "WINDOW", "SIGN", "PLANT", "DISPLAY RACK", "PEEP HOLE", "TREE"].includes(noun)) {
                 return "I CAN'T DO THAT";
@@ -1607,7 +1807,7 @@
             }
             
             // Special case for giving wine to the bum
-            if (noun === "WINE" && gameState.currentRoom === 22 && gameState.objectLocations["BUM"] !== null) {
+            if (noun === "WINE" && gameState.currentRoom === 22 && rooms[22].objects.includes("BUM")) {
                 gameState.objectLocations["WINE"] = null;
                 gameState.gameFlags.bumWineGiven = true;
                 gameState.objectLocations["KNIFE"] = 22;
@@ -1618,20 +1818,27 @@
             if (noun === "WINE" && gameState.currentRoom === 16 && gameState.gameFlags.girlMarried) {
                 gameState.objectLocations["WINE"] = null;
                 gameState.gameFlags.wineGiven = true;
-                return "SHE SAYS 'LAY DOWN HONEY- LET ME GIVE YOU A SPECIAL SUPRISE!!\nI LAY DOWN AND SHE SAYS 'OK- NOW CLOSE YOUR EYES'. I CLOSE MY EYES AND SHE STARTS TO GO TO WORK ON ME..........";
+                return specialDescriptions["WINE DISCO GIRL"];
             }
             
             // Special case for giving apple to jacuzzi girl
             if (noun === "APPLE" && gameState.currentRoom === 26) {
                 gameState.objectLocations["APPLE"] = null;
                 gameState.gameFlags.appleEaten = true;
-                return "SHE TAKES THE APPLE AND RAISES IT TO HER MOUTH. WITH AN OUTRAGEOUSLY INNOCENT LOOK SHE TAKES A SMALL BITE OUT OF IT.\nA SMILE COMES ACROSS HER FACE! SHE'S REALLY STARTING TO LOOK QUITE SEXY!!!!\nSHE WINKS AND LAYS BACK INTO THE JACUZZI";
+                return specialDescriptions["APPLE EATEN"];
             }
             
             // Special case for giving pills to blonde
             if (noun === "PILLS" && gameState.currentRoom === 19) {
                 gameState.objectLocations["PILLS"] = null;
-                return "THE BLONDE LOOKS AT THE PILLS AND SAYS 'THANKS!!! I LOVE THIS STUFF!'\nSHE TAKES A PILL..........HER NIPPLES START TO STAND UP! WOW!!!!\nSHE'S BREATHING HEAVILY....I HOPE SHE RAPES ME!!!!!\nSHE SAYS 'SO LONG!!! I'M GOING TO GO SEE MY BOYFRIEND!' SHE DISAPPEARS DOWN THE STAIRS........";
+                return specialDescriptions["BLONDE PILLS"];
+            }
+            
+            // Special case for giving whiskey to businessman
+            if (noun === "WHISKEY" && gameState.currentRoom === 3 && rooms[3].objects.includes("BUSINESSMAN")) {
+                gameState.objectLocations["WHISKEY"] = null;
+                gameState.objectLocations["CONTROLLER"] = 3;
+                return "THE GUY GIVES ME A TV CONTROLLER!!";
             }
             
             // Otherwise, just drop it in the current room
@@ -1674,6 +1881,10 @@
             if (noun === "ROPE" && (gameState.currentRoom === 7 || gameState.currentRoom === 10)) {
                 gameState.objectLocations["ROPE"] = null; // Use up the rope
                 return "OK";
+            }
+            
+            if (noun === "TOILET" && gameState.currentRoom === 2) {
+                return specialDescriptions["CONSTIPATION"];
             }
             
             return "I DON'T KNOW HOW TO USE THAT HERE.";
@@ -1724,6 +1935,14 @@
                 return "THERE'S NOTHING ELSE IN THE CABINET.";
             }
             
+            if (noun === "CURTAIN" && gameState.currentRoom === 3) {
+                if (!gameState.gameFlags.barButtonPressed) {
+                    return "IT SEEMS TO BE CONTROLLED BY SOMETHING.";
+                } else {
+                    return "IT'S ALREADY OPEN.";
+                }
+            }
+            
             return "UMMM..........................HUH??";
         }
         
@@ -1734,8 +1953,9 @@
             if (noun === "BUTTON" && gameState.currentRoom === 3) {
                 if (!gameState.gameFlags.barButtonPressed) {
                     gameState.gameFlags.barButtonPressed = true;
+                    gameState.gameFlags.buttonPushed++;
                     rooms[3].exits["EAST"] = 4; // Add exit to street outside
-                    return "A CURTAIN PULLS BACK!!";
+                    return "A VOICE ASKS 'WHATS THE PASSWORD?' (ONE WORD)\nBELLYBUTTON\nTHE CURTAIN PULLS BACK!!";
                 }
                 return "NOTHING HAPPENS.";
             }
@@ -1797,8 +2017,11 @@
             
             if (noun === "SLOTS" && gameState.currentRoom === 13) {
                 if (gameState.money < 1) {
+                    gameState.gameOver = true;
                     return "I'M BROKE!!!- THAT MEANS DEATH!!!!!!!!";
                 }
+                
+                gameState.gameFlags.slotMachinePlayed = true;
                 
                 // Simple slot machine game
                 const symbols = ["🍒", "🍊", "🍇", "🍋", "7️⃣", "💰"];
@@ -1812,13 +2035,13 @@
                 
                 if (result[0] === result[1] && result[1] === result[2]) {
                     gameState.money += 15;
-                    return `${result.join(" | ")}\nTRIPLES!!!!!! YOU WIN $1500\nYOU HAVE $${gameState.money}00`;
+                    return `${result.join(" | ")}\nTRIPLES!!!!!! YOU WIN $1500\nYOU HAVE ${gameState.money}00`;
                 } else if (result[0] === result[1] || result[1] === result[2] || result[0] === result[2]) {
                     gameState.money += 3;
-                    return `${result.join(" | ")}\nA PAIR! YOU WIN $300\nYOU HAVE $${gameState.money}00`;
+                    return `${result.join(" | ")}\nA PAIR! YOU WIN $300\nYOU HAVE ${gameState.money}00`;
                 }
                 
-                return `${result.join(" | ")}\nYOU LOSE!\nYOU HAVE $${gameState.money}00`;
+                return `${result.join(" | ")}\nYOU LOSE!\nYOU HAVE ${gameState.money}00`;
             }
             
             if (noun === "21" && gameState.currentRoom === 14) {
@@ -1826,8 +2049,11 @@
                 alert("THIS WILL COST $100 EACH TIME\nYOU HAVE $" + gameState.money + "00\nWOULD YOU LIKE TO PLAY?");
                 
                 if (gameState.money < 1) {
+                    gameState.gameOver = true;
                     return "I'M BROKE!!!- THAT MEANS DEATH!!!!!!!!";
                 }
+                
+                gameState.gameFlags.blackjackPlayed = true;
                 
                 const playerCards = [];
                 const dealerCards = [];
@@ -1907,7 +2133,7 @@
                 
                 if (!gameState.gameFlags.rubberWorn) {
                     gameState.gameOver = true;
-                    gameState.deathMessage = "OH NO!!!! I'VE GOT THE DREADED ATOMIC CLAP!!! I'M DEAD!!";
+                    gameState.deathMessage = specialDescriptions["DEATH CLAP"];
                     return gameState.deathMessage;
                 }
                 
@@ -1938,7 +2164,7 @@
             }
             
             if (noun === "GIRL" && gameState.currentRoom === 21) {
-                return "SHE SAYS 'GET ME SOME GIFTS FIRST!!!'";
+                return "SHE KICKS ME IN THE STOMACH AND LAUGHS!!";
             }
             
             if (["BUSINESSMAN", "BARTENDER", "BIG DUDE", "WAITRESS", "DEALER", "BLONDE", "PREACHER"].includes(noun)) {
@@ -1995,6 +2221,56 @@
             }
             
             return total;
+        }
+        
+        // Handle purgatory (death state)
+        function handlePurgatory() {
+            const choices = ["HELL", "LIFE", "PURGATORY"];
+            const randomIndex = Math.floor(Math.random() * 3);
+            
+            let choice = prompt(`WELCOME TO PURGATORY!! HERE AT THIS CROSSROADS YOU HAVE THREE OPTIONS:
+
+BEFORE YOU ARE THREE DOORS. EACH WILL BRING YOU TO A DIFFERENT PLACE- 
+A- TO HELL (WHERE THE GAME ENDS)
+B- BACK TO LIFE, UNHARMED
+C- YOU STAY HERE AND MUST CHOOSE AGAIN
+
+THE DOORS ARE RANDOMLY DIFFERENT EACH TIME!!
+
+CHOOSE YOUR DOOR: 1, 2, OR 3??`);
+            
+            if (choice !== "1" && choice !== "2" && choice !== "3") {
+                return "YOU'RE STILL HERE!";
+            }
+            
+            const doorChoice = parseInt(choice) - 1;
+            
+            if (doorChoice === randomIndex) {
+                if (choices[randomIndex] === "HELL") {
+                    gameState.gameOver = true;
+                    return "YOU CHOSE HELL. GAME OVER.";
+                } else if (choices[randomIndex] === "LIFE") {
+                    gameState.gameOver = false;
+                    return "YOU'RE BACK TO LIFE!";
+                } else {
+                    return "YOU'RE STILL HERE!";
+                }
+            } else {
+                let alternate = (doorChoice + 1) % 3;
+                if (alternate === randomIndex) {
+                    alternate = (doorChoice + 2) % 3;
+                }
+                
+                if (choices[alternate] === "HELL") {
+                    gameState.gameOver = true;
+                    return "YOU CHOSE HELL. GAME OVER.";
+                } else if (choices[alternate] === "LIFE") {
+                    gameState.gameOver = false;
+                    return "YOU'RE BACK TO LIFE!";
+                } else {
+                    return "YOU'RE STILL HERE!";
+                }
+            }
         }
         
         window.onload = initialize;
